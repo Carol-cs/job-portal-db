@@ -7,12 +7,11 @@
   Specifically, it will drop a table, create a table, insert values update
   values, and then query for values
   IF YOU HAVE A TABLE CALLED "demoTable" IT WILL BE DESTROYED
-
   The script assumes you already have a server set up All OCI commands are
   commands to the Oracle libraries. To get the file to work, you must place it
   somewhere where your Apache server can run it, and you must rename it to have
   a ".php" extension. You must also change the username and password on the
-  oci_connect below to be your ORACLE username and password
+  oci_connect below to be your ORACLE username and passwordcd
 -->
 
 <?php
@@ -28,8 +27,8 @@ error_reporting(E_ALL);
 // Set some parameters
 
 // Database access configuration
-$config["dbuser"] = "ora_carolm03";			// change "cwl" to your own CWL
-$config["dbpassword"] = "a17849571";	// change to 'a' + your student number
+$config["dbuser"] = "ora_xli2801";			// change "cwl" to your own CWL
+$config["dbpassword"] = "a80002512";	// change to 'a' + your student number
 $config["dbserver"] = "dbhost.students.cs.ubc.ca:1522/stu";
 $db_conn = NULL;	// login credentials are used in connectToDB()
 
@@ -48,59 +47,8 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
 </head>
 
 <body>
-	<h2>Reset</h2>
-	<p>If you wish to reset the table press on the reset button. If this is the first time you're running this page, you MUST use reset</p>
-
-	<form method="POST" action="job-portal.php">
-		<!-- "action" specifies the file or page that will receive the form data for processing. As with this example, it can be this same file. -->
-		<input type="hidden" id="resetTablesRequest" name="resetTablesRequest">
-		<p><input type="submit" value="Reset" name="reset"></p>
-	</form>
-
-	<hr />
-
-	<h2>Insert Values into DemoTable</h2>
-	<form method="POST" action="job-portal.php">
-		<input type="hidden" id="insertQueryRequest" name="insertQueryRequest">
-		Number: <input type="text" name="insNo"> <br /><br />
-		Name: <input type="text" name="insName"> <br /><br />
-
-		<input type="submit" value="Insert" name="insertSubmit"></p>
-	</form>
-
-	<hr />
-
-	<h2>Update Name in DemoTable</h2>
-	<p>The values are case sensitive and if you enter in the wrong case, the update statement will not do anything.</p>
-
-	<form method="POST" action="job-portal.php">
-		<input type="hidden" id="updateQueryRequest" name="updateQueryRequest">
-		Old Name: <input type="text" name="oldName"> <br /><br />
-		New Name: <input type="text" name="newName"> <br /><br />
-
-		<input type="submit" value="Update" name="updateSubmit"></p>
-	</form>
-
-	<hr />
-
-	<h2>Count the Tuples in DemoTable</h2>
-	<form method="GET" action="job-portal.php">
-		<input type="hidden" id="countTupleRequest" name="countTupleRequest">
-		<input type="submit" name="countTuples"></p>
-	</form>
-
-	<hr />
-
-	<h2>Display Tuples in DemoTable</h2>
-	<form method="GET" action="job-portal.php">
-		<input type="hidden" id="displayTuplesRequest" name="displayTuplesRequest">
-		<input type="submit" name="displayTuples"></p>
-	</form>
-
-    <hr />
-
     <h2>Recruiter Reviews Applications</h2>
-	<form method="GET" action="job-portal.php">
+	<form method="GET" action="recruiter.php">
 		<input type="hidden" id="displayApplicationsRequest" name="displayApplicationsRequest">
 		<input type="submit" value="Review" name="displayApplications"></p>
 	</form>
@@ -294,7 +242,6 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
 					 ID: {$row["INTERVIEWERID"]}<br>
 					 Name: {$row["NAME"]}<br>
 					 Contact: {$row["CONTACTNUM"]}<br>
-
 					
 					</td>
 					<td>
@@ -425,8 +372,9 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
     function handleDisplayApplicationsRequest()
     {
         global $db_conn;
-        // $userid= $_GET("id"); // TODO: May change to username
-        $userid=1;
+        //$userid= $_GET("username"); // TODO: May change to username
+        var_dump($_GET);
+        $username=1;
         $result = executePlainSQL(
             "SELECT
                 Applications.ApplicationId,
@@ -444,9 +392,9 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
                 Users
             WHERE
                 Applications.JobPostId = JobPosts.JobPostId
-                AND Applications.RecruiterId =$userid
+                AND Applications.RecruiterId =$username
                 AND Resumes.Resume = Applications.Resume
-                AND Resumes.JobSeekerId = Users.UserId");
+                AND Resumes.JobSeekerId = Users.UserName");
         displayApplications($result);
     }
 
@@ -536,7 +484,6 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
               </select><br>";
 
         echo "<label for='datetime'>Date and Time: </label>
-
 				<input
 				type='datetime-local'
 				id='interviewDatetime'

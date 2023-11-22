@@ -1,0 +1,606 @@
+<!--Test Oracle file for UBC CPSC304 2018 Winter Term 1
+  Created by Jiemin Zhang
+  Modified by Simona Radu
+  Modified by Jessica Wong (2018-06-22)
+  This file shows the very basics of how to execute PHP commands
+  on Oracle.
+  Specifically, it will drop a table, create a table, insert values
+  update values, and then query for values
+
+  IF YOU HAVE A TABLE CALLED "demoTable" IT WILL BE DESTROYED
+
+  The script assumes you already have a server set up
+  All OCI commands are commands to the Oracle libraries
+  To get the file to work, you must place it somewhere where your
+  Apache server can run it, and you must rename it to have a ".php"
+  extension.  You must also change the username and password on the
+  OCILogon below to be your ORACLE username and password -->
+  <?php
+    // Start the session
+    session_start();
+    ?>
+  <html>
+    <head>
+        <title>Job Portal</title>
+    </head>
+
+    <body>
+        <h2>Reset</h2>
+        <p>If you wish to reset the table press on the reset button. If this is the first time you're running this page, you MUST use reset</p>
+
+        <form method="POST" action="job_portal.php">
+            <!-- if you want another page to load after the button is clicked, you have to specify that page in the action parameter -->
+            <input type="hidden" id="resetTablesRequest" name="resetTablesRequest">
+            <p><input type="submit" value="Reset" name="reset"></p>
+        </form>
+
+        <hr />
+
+        <h2>User Sign-up</h2>
+        <form method="POST" action="job_portal.php">
+            <input type="hidden" id="insertUserQueryRequest" name="insertUserQueryRequest">
+            
+            Username: <input type="text" name="username" required="required"> <br /><br />
+            Password: <input type="password" name="password" required="required"> <br /><br />
+
+            User Type:
+            <select name="userType" id="userTypeSelect" required="required">
+                <option disabled selected value> -- select an option -- </option>
+                <option value="recruiter" name="recruiter">Recruiter</option>
+                <option value="jobseeker" name="jobseeker">Job Seeker</option>
+            </select>
+            <br /><br />
+            
+            Name: <input type="text" name="name" required="required"> <br /><br />
+            Email Address: <input type="text" name="email" required="required"> <br /><br />
+            Phone Number: <input type="text" name="phone"> <br /><br />
+            Description: <input type="text" name="description"> <br /><br />
+
+            <div id="companyInfo" style="display: none;">
+                <label for="companyOption">Company:</label>
+                <select name="companyOption" id="companyOption">
+                    <option disabled selected value> -- select an option -- </option>
+                    <option value="existing" name="existing">Use Existing Company ID</option>
+                    <option value="createNew" name="createNew">Create New Company</option>
+                </select>
+                <br /><br />
+                <div id="existingCompany" style="display: none;">
+                    Company ID: <input type="text" name="companyID"> <br /><br />
+                </div>
+                <div id="newCompany" style="display: none;">
+                    New Company Info:<br />
+                    Company Name: <input type="text" name="companyName"> <br /><br />
+                    Company Address: <input type="text" name="companyAddress"> <br /><br />
+                </div>
+            </div>
+
+            <input type="submit" value="Sign Up" name="insertSubmit">
+        </form>
+
+        <script>
+            // JavaScript to toggle fields based on user type and company option
+            const userTypeSelect = document.getElementById('userTypeSelect');
+            const companyInfoDiv = document.getElementById('companyInfo');
+            const existingCompanyDiv = document.getElementById('existingCompany');
+            const newCompanyDiv = document.getElementById('newCompany');
+            const companyOption = document.getElementById('companyOption');
+
+            userTypeSelect.addEventListener('change', function () {
+                if (userTypeSelect.value === 'recruiter') {
+                    companyInfoDiv.style.display = 'block';
+                    document.getElementById('companyOption').required = true;
+                } else {
+                    companyInfoDiv.style.display = 'none';
+                    document.getElementById('companyOption').required = false;
+                }
+            });
+
+            companyOption.addEventListener('change', function () {
+                if (companyOption.value === 'existing') {
+                    existingCompanyDiv.style.display = 'block';
+                    newCompanyDiv.style.display = 'none';
+                    document.getElementById('companyID').required = true;
+                    document.getElementById('companyName').required = false;
+                } else if (companyOption.value === 'createNew') {
+                    existingCompanyDiv.style.display = 'none';
+                    newCompanyDiv.style.display = 'block';
+                    document.getElementById('companyID').required = false;
+                    document.getElementById('companyName').required = true;
+                }
+            });
+        </script>
+
+        <hr />
+
+        <h2>User Log-in</h2>
+        <form method="POST" action="login_validate.php">
+            <input type="hidden" id="loginQueryRequest" name="loginQueryRequest">
+            
+            Username: <input type="text" name="username" required="required"> <br /><br />
+            Password: <input type="password" name="password" required="required"> <br /><br />
+
+            <input type="submit" value="Log In" name="loginSubmit">
+        </form>
+        <hr />
+
+        <h2>Count the Tuples in UserLogInfo</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countUserLogInfoTupleRequest" name="countUserLogInfoTupleRequest">
+            <input type="submit" name="countTuples1"></p>
+        </form>
+
+        <h2>Count the Tuples in Companies</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countCompaniesTupleRequest" name="countCompaniesTupleRequest">
+            <input type="submit" name="countTuples2"></p>
+        </form>
+
+        <h2>Count the Tuples in Recruiters</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countRecruitersTupleRequest" name="countRecruitersTupleRequest">
+            <input type="submit" name="countTuples3"></p>
+        </form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <?php
+		//this tells the system that it's no longer just parsing html; it's now parsing PHP
+        $success = True; //keep track of errors so it redirects the page only if there are no errors
+        $db_conn = NULL; // edit the login credentials in connectToDB()
+        $show_debug_alert_messages = False; // set to True if you want alerts to show you which methods are being triggered (see how it is used in debugAlertMessage())
+
+        function debugAlertMessage($message) {
+            global $show_debug_alert_messages;
+
+            if ($show_debug_alert_messages) {
+                echo "<script type='text/javascript'>alert('" . $message . "');</script>";
+            }
+        }
+
+        function executePlainSQL($cmdstr) { //takes a plain (no bound variables) SQL command and executes it
+            //echo "<br>running ".$cmdstr."<br>";
+            global $db_conn, $success;
+
+            $statement = OCIParse($db_conn, $cmdstr);
+            //There are a set of comments at the end of the file that describe some of the OCI specific functions and how they work
+
+            if (!$statement) {
+                echo "<br>Cannot parse the following command: " . $cmdstr . "<br>";
+                $e = OCI_Error($db_conn); // For OCIParse errors pass the connection handle
+                echo htmlentities($e['message']);
+                $success = False;
+            }
+
+            $r = OCIExecute($statement, OCI_DEFAULT);
+            if (!$r) {
+                echo "<br>Cannot execute the following command: " . $cmdstr . "<br>";
+                $e = oci_error($statement); // For OCIExecute errors pass the statementhandle
+                echo htmlentities($e['message']);
+                $success = False;
+            }
+
+			return $statement;
+		}
+
+        function executeBoundSQL($cmdstr, $list) {
+            /* Sometimes the same statement will be executed several times with different values for the variables involved in the query.
+		In this case you don't need to create the statement several times. Bound variables cause a statement to only be
+		parsed once and you can reuse the statement. This is also very useful in protecting against SQL injection.
+		See the sample code below for how this function is used */
+
+			global $db_conn, $success;
+			$statement = OCIParse($db_conn, $cmdstr);
+
+            if (!$statement) {
+                echo "<br>Cannot parse the following command: " . $cmdstr . "<br>";
+                $e = OCI_Error($db_conn);
+                echo htmlentities($e['message']);
+                $success = False;
+            }
+
+            foreach ($list as $tuple) {
+                foreach ($tuple as $bind => $val) {
+                    //echo $val;
+                    //echo "<br>".$bind."<br>";
+                    OCIBindByName($statement, $bind, $val);
+                    unset ($val); //make sure you do not remove this. Otherwise $val will remain in an array object wrapper which will not be recognized by Oracle as a proper datatype
+				}
+
+                $r = OCIExecute($statement, OCI_DEFAULT);
+                if (!$r) {
+                    echo "<br>Cannot execute the following command: " . $cmdstr . "<br>";
+                    $e = OCI_Error($statement); // For OCIExecute errors, pass the statementhandle
+                    echo htmlentities($e['message']);
+                    echo "<br>";
+                    $success = False;
+                }
+            }
+        }
+
+        function printResult($result) { //prints results from a select statement
+            echo "<br>Retrieved data from table demoTable:<br>";
+            echo "<table>";
+            echo "<tr><th>ID</th><th>Name</th></tr>";
+
+            while ($row = OCI_Fetch_Array($result, OCI_BOTH)) {
+                echo "<tr><td>" . $row["ID"] . "</td><td>" . $row["NAME"] . "</td></tr>"; //or just use "echo $row[0]"
+            }
+
+            echo "</table>";
+        }
+
+        function connectToDB() {
+            global $db_conn;
+
+            // Your username is ora_(CWL_ID) and the password is a(student number). For example,
+			// ora_platypus is the username and a12345678 is the password.
+            $db_conn = OCILogon("ora_xli2801", "a80002512", "dbhost.students.cs.ubc.ca:1522/stu");
+
+            if ($db_conn) {
+                debugAlertMessage("Database is Connected");
+                return true;
+            } else {
+                debugAlertMessage("Cannot connect to Database");
+                $e = OCI_Error(); // For OCILogon errors pass no handle
+                echo htmlentities($e['message']);
+                return false;
+            }
+        }
+
+        function disconnectFromDB() {
+            global $db_conn;
+
+            debugAlertMessage("Disconnect from Database");
+            OCILogoff($db_conn);
+        }
+
+        function handleUpdateRequest() {
+            global $db_conn;
+
+            $old_name = $_POST['oldName'];
+            $new_name = $_POST['newName'];
+
+            // you need the wrap the old name and new name values with single quotations
+            executePlainSQL("UPDATE demoTable SET name='" . $new_name . "' WHERE name='" . $old_name . "'");
+            OCICommit($db_conn);
+        }
+
+        function handleResetRequest() {
+            global $db_conn;
+            // Drop old table
+            executePlainSQL("DROP TABLE Companies_CareerFairs");
+            executePlainSQL("DROP TABLE JobSeekers_CareerFairs");
+            executePlainSQL("DROP TABLE CareerFairs");
+            executePlainSQL("DROP TABLE Interviewers_Attend");
+            executePlainSQL("DROP TABLE Applications_ScheduledInterviews");
+            executePlainSQL("DROP TABLE ScheduledInterviews");
+            executePlainSQL("DROP TABLE Applications");
+            executePlainSQL("DROP TABLE LocationDetails");
+            executePlainSQL("DROP TABLE Resumes");
+            executePlainSQL("DROP TABLE JobPosts");
+            executePlainSQL("DROP TABLE JobSeekers");
+            executePlainSQL("DROP TABLE Recruiters");
+            executePlainSQL("DROP TABLE Companies");
+            executePlainSQL("DROP TABLE Users");
+            executePlainSQL("DROP TABLE UserLogInfo");
+            executePlainSQL("DROP SEQUENCE CompanyId_of_sequence");
+
+            // Create new table
+            echo "<br> creating new table <br>";
+            $sqlQueries = [
+                "CREATE TABLE UserLogInfo (
+                    UserName VARCHAR(100) PRIMARY KEY,
+                    PassWord VARCHAR(100) NOT NULL
+                  )",
+                  "CREATE TABLE Users (
+                    UserName VARCHAR (100) PRIMARY KEY,
+                    Name VARCHAR(100) NOT NULL,
+                    EmailAddress VARCHAR(100) NOT NULL UNIQUE,
+                    PhoneNumber VARCHAR(20) UNIQUE,
+                    Description VARCHAR(4000),
+                    FOREIGN KEY (UserName) REFERENCES UserLogInfo ON DELETE CASCADE
+                  )",
+                  "CREATE SEQUENCE CompanyId_of_sequence
+                  START WITH 1
+                  INCREMENT BY 1
+                  CACHE 1000",
+                  "CREATE TABLE Companies (
+                    CompanyId INTEGER PRIMARY KEY,
+                    CompanyName VARCHAR(100) NOT NULL,
+                    Address VARCHAR(100),
+                    UNIQUE (CompanyName, Address)
+                  )",
+                  "CREATE TABLE Recruiters (
+                    UserName VARCHAR (100) PRIMARY KEY,
+                    CompanyId INTEGER,
+                    FOREIGN KEY (UserName) REFERENCES Users ON DELETE CASCADE,
+                    FOREIGN KEY (CompanyId) REFERENCES Companies ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE JobSeekers (
+                    UserName VARCHAR (100) PRIMARY KEY,
+                    FOREIGN KEY (UserName) REFERENCES Users ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE JobPosts (
+                    JobPostId INTEGER PRIMARY KEY,
+                    RecruiterId VARCHAR(100),
+                    Title VARCHAR(100) NOT NULL,
+                    Location VARCHAR(100),
+                    Salary INTEGER,
+                    PostDate DATE NOT NULL,
+                    JobType VARCHAR(100) NOT NULL,
+                    Description VARCHAR(4000) NOT NULL,
+                    Deadline DATE Not NULL,
+                    Requirements VARCHAR(4000),
+                    NumOfApplications INTEGER NOT NULL,
+                    FOREIGN KEY (RecruiterId) REFERENCES Recruiters ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE Resumes (
+                      Resume VARCHAR(4000) PRIMARY KEY,
+                      JobSeekerId VARCHAR(100) NOT NULL,
+                      FOREIGN KEY (JobSeekerId) REFERENCES JobSeekers(UserName)
+                  )",
+                  "CREATE TABLE Applications (
+                      ApplicationId INTEGER PRIMARY KEY,
+                      RecruiterId VARCHAR(100),
+                      JobPostId INTEGER,
+                      CreateDate DATE NOT NULL,
+                      CoverLetter VARCHAR(4000),
+                      Resume VARCHAR(4000) NOT NULL,
+                      Status VARCHAR(100) NOT NULL,
+                      ApplyDate DATE,
+                      FOREIGN KEY (RecruiterId) REFERENCES Recruiters(UserName),
+                      FOREIGN KEY (JobPostId) REFERENCES JobPosts(JobPostId),
+                      FOREIGN KEY (Resume) REFERENCES Resumes(Resume)
+                  )",
+                  "CREATE TABLE ScheduledInterviews (
+                      InterviewId INTEGER PRIMARY KEY,
+                      JobPostId INTEGER NOT NULL,
+                      Location VARCHAR(255) NOT NULL,
+                      InterviewMode CHAR(10) NOT NULL,
+                      DateTime DATE NOT NULL,
+                      TimeZone VARCHAR(10) NOT NULL,
+                      FOREIGN KEY (JobPostId) REFERENCES JobPosts(JobPostId)
+                  )",
+                  "CREATE TABLE Applications_ScheduledInterviews (
+                      InterviewId INTEGER,
+                      ApplicationId INTEGER,
+                      PRIMARY KEY (InterviewId, ApplicationId),
+                      FOREIGN KEY (InterviewId) REFERENCES ScheduledInterviews ON DELETE CASCADE, 
+                      FOREIGN KEY (ApplicationId) REFERENCES Applications ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE Interviewers_Attend(
+                      InterviewerId INTEGER,
+                      InterviewId INTEGER,
+                      Name VARCHAR(100) NOT NULL,
+                      ContactNum VARCHAR(100),
+                  PRIMARY KEY (InterviewerId, InterviewId),
+                  FOREIGN KEY (InterviewId) REFERENCES ScheduledInterviews ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE LocationDetails(
+                      PostalCode VARCHAR(10) PRIMARY KEY,
+                      City VARCHAR(100) NOT NULL,
+                      Province VARCHAR(100) NOT NULL
+                  )",
+                  "CREATE TABLE CareerFairs (
+                      EventId INTEGER PRIMARY KEY,
+                      EventName VARCHAR(100) NOT NULL,
+                      PostalCode VARCHAR(10) NOT NULL,
+                      Location VARCHAR(500) NOT NULL,
+                      EventDate DATE NOT NULL,
+                  FOREIGN KEY (PostalCode) REFERENCES LocationDetails ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE Companies_CareerFairs(
+                      CompanyId INTEGER,
+                      EventId INTEGER,
+                      PRIMARY KEY (CompanyId, EventId),
+                      FOREIGN KEY (CompanyId) REFERENCES Companies ON DELETE CASCADE,
+                  FOREIGN KEY (EventId) REFERENCES CareerFairs ON DELETE CASCADE
+                  )",
+                  "CREATE TABLE JobSeekers_CareerFairs(
+                      JobSeekerId VARCHAR(100),
+                      EventId INTEGER,
+                      PRIMARY KEY (JobSeekerId, EventId),
+                      FOREIGN KEY (JobSeekerId) REFERENCES JobSeekers ON DELETE CASCADE,
+                  FOREIGN KEY (EventId) REFERENCES CareerFairs ON DELETE CASCADE
+                  )"
+            ];
+            
+            foreach ($sqlQueries as $sqlQuery) {
+                executePlainSQL($sqlQuery);
+                OCICommit($db_conn);
+            }
+        }
+
+        function handleInsertUserRequest() {
+            global $db_conn, $success;
+
+            //login info insert
+            $logintuple = array (
+                ":bind1" => $_POST['username'],
+                ":bind2" => $_POST['password']
+            );
+
+            $loginAlltuples = array ($logintuple);
+            executeBoundSQL("insert into UserLogInfo values (:bind1, :bind2)", $loginAlltuples);
+            OCICommit($db_conn);
+            
+            if ($success == True) {
+                //user insert
+                $userTuple = array(
+                    ":bind1" => $_POST['username'],
+                    ":bind2" => $_POST['name'],
+                    ":bind3" => $_POST['email'],
+                    ":bind4" => $_POST['phone'],
+                    ":bind5" => $_POST['description']  
+                );
+    
+                $userAlltuples = array($userTuple);
+                executeBoundSQL("insert into Users values (:bind1, :bind2, :bind3, :bind4, :bind5)", $userAlltuples);
+                OCICommit($db_conn);
+
+                if ($success == True) {
+                    if ($_POST['userType'] == "jobseeker") {
+                        executeBoundSQL("insert into JobSeekers values (:bind1)", $userAlltuples);
+                        OCICommit($db_conn);
+
+                    } else if ($_POST['userType'] == "recruiter" && ($_POST['companyOption'] == "createNew" || $_POST['companyOption'] == "existing")) {
+                        if ($_POST['companyOption'] == "createNew") {
+                            $companyTuple = array(
+                                ":bind1" => $_POST['companyName'],
+                                ":bind2" => $_POST['companyAddress']
+                            );
+                
+                            $companyAlltuples = array($companyTuple);
+                            executeBoundSQL("insert into Companies values (CompanyId_of_sequence.nextval, :bind1, :bind2)", $companyAlltuples);
+                            OCICommit($db_conn);
+                            $companyId = executePlainSQL("SELECT CompanyId_of_sequence.currval FROM dual");
+                            $id = oci_fetch_assoc($companyId)['CURRVAL'];
+                            echo "<br> The company id is: " . $id . "<br>";
+                        }
+                        if ($success == True) {
+                            if ($_POST['companyOption'] == "existing") {
+                                $id = $_POST['companyID'];
+                            }
+                            //user insert
+                            $recruiterTuple = array(
+                                ":bind1" => $_POST['username'],
+                                ":bind2" => $id
+                            );
+                
+                            $recruiterAlltuples = array($recruiterTuple);
+                            executeBoundSQL("insert into Recruiters values (:bind1, :bind2)", $recruiterAlltuples);
+                            OCICommit($db_conn);
+
+                            if ($success == FALSE) {
+                                echo "<br> sign up failed <br>";
+                                executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
+                                executeBoundSQL("delete from Users where UserName = (:bind1)", $userAlltuples);
+                                executeBoundSQL("delete from Companies where CompanyId = (:bind2)", $recruiterAlltuples);
+                            } else {
+                                echo("Sign Up Succeeded!");
+                            }
+                        } else {
+                            echo "<br> Cannot add to recruiter table <br>";
+                            executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
+                            executeBoundSQL("delete from Users where UserName = (:bind1)", $userAlltuples);
+                        }
+                    } else {
+                        echo "<br> No option chosen <br>";
+                        executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
+                        OCICommit($db_conn);
+                    }
+                } else {
+                    echo "<br> Cannot add to user table <br>";
+                    executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
+                    OCICommit($db_conn);
+                }
+            }
+        }
+
+        function handleCountRequest1() {
+            global $db_conn;
+
+            $result = executePlainSQL("SELECT Count(*) FROM UserLogInfo");
+
+            if (($row = oci_fetch_row($result)) != false) {
+                echo "<br> The number of tuples in UserLogInfo: " . $row[0] . "<br>";
+            }
+        }
+        function handleCountRequest2() {
+            global $db_conn;
+
+            $result = executePlainSQL("SELECT Count(*) FROM Companies");
+
+            if (($row = oci_fetch_row($result)) != false) {
+                echo "<br> The number of tuples in Companies: " . $row[0] . "<br>";
+            }
+        }
+        function handleCountRequest3() {
+            global $db_conn;
+
+            $result = executePlainSQL("SELECT Count(*) FROM Recruiters");
+
+            if (($row = oci_fetch_row($result)) != false) {
+                echo "<br> The number of tuples in Recruiters: " . $row[0] . "<br>";
+            }
+        }
+
+        function handleLoginRequest() {
+            global $db_conn;
+
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+            $result = executePlainSQL("SELECT COUNT(*) FROM UserLogInfo WHERE UserName = '$username' AND PassWord = '$password'");
+
+            if (($row = oci_fetch_row($result)) != false) {
+                $count = $row[0];
+                if ($count == 1) {
+                    echo("success");
+                    header('Location:hello.php');
+                    exit();
+                } else {
+                    echo("login failed...");
+                }
+            }else {
+                echo("login failed...2");
+            }
+        }
+
+        // HANDLE ALL POST ROUTES
+	// A better coding practice is to have one method that reroutes your requests accordingly. It will make it easier to add/remove functionality.
+        function handlePOSTRequest() {
+            if (connectToDB()) {
+                if (array_key_exists('resetTablesRequest', $_POST)) {
+                    handleResetRequest();
+                } else if (array_key_exists('updateQueryRequest', $_POST)) {
+                    handleUpdateRequest();
+                } else if (array_key_exists('insertUserQueryRequest', $_POST)) {
+                    handleInsertUserRequest();
+                }  else if (array_key_exists('loginQueryRequest', $_POST)) {
+                    handleLoginRequest();
+                }
+
+                disconnectFromDB();
+            }
+        }
+
+        // HANDLE ALL GET ROUTES
+	// A better coding practice is to have one method that reroutes your requests accordingly. It will make it easier to add/remove functionality.
+        function handleGETRequest() {
+            if (connectToDB()) {
+                if (array_key_exists('countUserLogInfoTupleRequest', $_GET)) {
+                    handleCountRequest1();
+                } else if (array_key_exists('countCompaniesTupleRequest', $_GET)) {
+                    handleCountRequest2();
+                } else if (array_key_exists('countRecruitersTupleRequest', $_GET)) {
+                    handleCountRequest3();
+                }
+
+                disconnectFromDB();
+            }
+        }
+
+		if (isset($_POST['reset']) || isset($_POST['insertSubmit']) || isset($_POST['loginSubmit'])) {
+            handlePOSTRequest();
+        } else if (isset($_GET['countTuples1']) || isset($_GET['countTuples2']) || isset($_GET['countTuples3'])) {
+            handleGETRequest();
+        }
+
+        echo $_SESSION["error_message"];
+        session_unset(); 
+		?>
+	</body>
+</html>
