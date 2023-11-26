@@ -332,10 +332,35 @@ if (isset($_SESSION['username'])) {
 			echo "<div>";
 
 			$rowsFetched = false; // used to track if have result
-
+			$jobSeekerUserName = $_SESSION["username"];
+			
 			
 			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
 				$rowsFetched = true;
+				$isButtonDisabled = false;
+
+			
+
+				$checkIfApplied = executePlainSQL(
+					"SELECT *
+					FROM JobSeekers, Resumes, Applications, JobPosts
+					WHERE JobSeekers.UserName = Resumes.JobSeekerId
+					  AND Resumes.Resume = Applications.Resume
+					  AND Applications.JobPostId = JobPosts.JobPostId
+					  AND JobSeekers.UserName = '$jobSeekerUserName'
+					  AND JobPosts.JobPostId = {$row["JOBPOSTID"]}"
+				);
+	
+				$count = 0;
+				while ($line = OCI_Fetch_Array($checkIfApplied, OCI_ASSOC)) {
+					$count=$count+1;
+				}
+				
+				if ($count != 0){
+					$isButtonDisabled = true;
+				}
+
+				
 				echo "<div style='border: 1px solid #ccc; margin-bottom: 20px; padding: 10px;'>
 						<h3>{$row["JOBTITLE"]}</h3>
 						<p><strong>Company:</strong> {$row["COMPANYNAME"]}</p>
@@ -349,7 +374,9 @@ if (isset($_SESSION['username'])) {
 						<p><strong>Num of Applications:</strong> {$row["NUMOFAPPLICATIONS"]}</p>
 						<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
 						<input type='hidden' id='applyJobPostsRequest' name='applyJobPostsRequest'>
-						<button type='submit' name='applyJobPosts' value='{$row["JOBPOSTID"]}'>Apply</button>
+						<button type='submit' name='applyJobPosts' value='{$row["JOBPOSTID"]}' " . ($isButtonDisabled ? 'disabled' : '') . ">
+						" . ($isButtonDisabled ? 'Applied' : 'Apply') . "
+						</button>
 					</form>
 					</div>";
 			}
@@ -418,26 +445,7 @@ if (isset($_SESSION['username'])) {
 					AND JobPosts.JobPostId = $jobPostId
 			");
 			$jobSeekerUserName = $_SESSION["username"];
-			$checkIfApplied = executePlainSQL(
-				"SELECT *
-				FROM JobSeekers, Resumes, Applications, JobPosts
-				WHERE JobSeekers.UserName = Resumes.JobSeekerId
-				  AND Resumes.Resume = Applications.Resume
-				  AND Applications.JobPostId = JobPosts.JobPostId
-				  AND JobSeekers.UserName = '$jobSeekerUserName'
-				  AND JobPosts.JobPostId = $jobPostId"
-			);
-
-			$count = 0;
-			while ($row = OCI_Fetch_Array($checkIfApplied, OCI_ASSOC)) {
-				$count=$count+1;
-			}
-			
-			if ($count != 0){
-				echo "<p style='color: red;'>Sorry, you cannot applied for the same job twice</p>";
-				return;
-			}
-
+		
 
 			$allIncompleteApplications = executePlainSQL(
 				"SELECT
