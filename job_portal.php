@@ -221,6 +221,9 @@
         ?>
 
         <hr />
+        <h2>View All Table</h2>
+        <a href="job_portal_view.php"><button>View All Table</button></a>
+        <hr />
 
         <h2>User Sign-up</h2>
         <form method="POST" action="job_portal.php">
