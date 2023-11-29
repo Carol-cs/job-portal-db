@@ -63,7 +63,6 @@
                 "DROP SEQUENCE JobPostId_Sequence",
                 "DROP SEQUENCE ApplicationId_Sequence",
                 "DROP SEQUENCE InterviewId_Sequence",
-                "DROP SEQUENCE InterviewerId_Sequence",
                 "DROP SEQUENCE EventId_Sequence",
                 
                 "CREATE TABLE UserLogInfo (
@@ -159,8 +158,6 @@
                     FOREIGN KEY (InterviewId) REFERENCES ScheduledInterviews ON DELETE CASCADE,
                     FOREIGN KEY (ApplicationId) REFERENCES Applications ON DELETE CASCADE
                 )",
-            
-                "CREATE SEQUENCE InterviewerId_Sequence START WITH 1 INCREMENT BY 1",
                 
                 "CREATE TABLE Interviewers_Attend(
                     InterviewerId INTEGER,
@@ -225,6 +222,7 @@
         <a href="job_portal_view.php"><button>View All Table</button></a>
         <hr />
 
+
         <h2>User Sign-up</h2>
         <form method="POST" action="job_portal.php">
             <input type="hidden" id="insertUserQueryRequest" name="insertUserQueryRequest">
@@ -242,7 +240,9 @@
             
             Name*  <input type="text" name="name" required="required"> <br /><br />
             Email Address* <input type="email" name="email" required="required"> <br /><br />
-            Phone Number (Eg. 123-456-7890)<input type="text" name="phone"> <br /><br />
+
+            Phone Number (Eg. 123-456-7890) <input type="text" name="phone"> <br /><br />
+
             Description <input type="text" name="description"> <br /><br />
 
             <div id="companyInfo" style="display: none;">
@@ -323,6 +323,7 @@
             //login info insert
             $logintuple = array (
                 ":bind1" => htmlspecialchars($_POST['username']),
+
                 ":bind2" => password_hash($_POST['password'], PASSWORD_DEFAULT)
             );
 
@@ -527,7 +528,7 @@
 
             // Your username is ora_(CWL_ID) and the password is a(student number). For example,
 			// ora_platypus is the username and a12345678 is the password.
-            $db_conn = OCILogon("ora_xli2801", "a80002512", "dbhost.students.cs.ubc.ca:1522/stu");
+            $db_conn = OCILogon("ora_carolm03", "a17849571", "dbhost.students.cs.ubc.ca:1522/stu");
 
             if ($db_conn) {
                 debugAlertMessage("Database is Connected");

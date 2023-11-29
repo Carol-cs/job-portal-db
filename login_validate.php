@@ -55,7 +55,9 @@ function handleLoginRequest() {
                 exit();
             } else {
                 $password = $row[0];
-                if (!password_verify($_POST['password'], $password)) {
+                // if (!password_verify($_POST['password'], $password)) {
+				if ($password !== $_POST['password']) {
+
                     $_SESSION['error_message'] = "Invalid username or password";
                     header('Location: job_portal.php');
                     exit();
