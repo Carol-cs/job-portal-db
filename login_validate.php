@@ -28,8 +28,8 @@ error_reporting(E_ALL);
 // Set some parameters
 
 // Database access configuration
-$config["dbuser"] = "ora_carolm03";			// change "cwl" to your own CWL
-$config["dbpassword"] = "a17849571";	// change to 'a' + your student number
+$config["dbuser"] = "ora_xli2801";			// change "cwl" to your own CWL
+$config["dbpassword"] = "a80002512";	// change to 'a' + your student number
 $config["dbserver"] = "dbhost.students.cs.ubc.ca:1522/stu";
 $db_conn = NULL;	// login credentials are used in connectToDB()
 
@@ -57,6 +57,7 @@ function handleLoginRequest() {
                 $password = $row[0];
                 // if (!password_verify($_POST['password'], $password)) {
 				if ($password !== $_POST['password']) {
+
                     $_SESSION['error_message'] = "Invalid username or password";
                     header('Location: job_portal.php');
                     exit();

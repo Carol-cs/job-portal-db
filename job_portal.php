@@ -218,6 +218,10 @@
         ?>
 
         <hr />
+        <h2>View All Table</h2>
+        <a href="job_portal_view.php"><button>View All Table</button></a>
+        <hr />
+
 
         <h2>User Sign-up</h2>
         <form method="POST" action="job_portal.php">
@@ -236,7 +240,9 @@
             
             Name*  <input type="text" name="name" required="required"> <br /><br />
             Email Address* <input type="email" name="email" required="required"> <br /><br />
+
             Phone Number (Eg. 123-456-7890) <input type="text" name="phone"> <br /><br />
+
             Description <input type="text" name="description"> <br /><br />
 
             <div id="companyInfo" style="display: none;">
@@ -317,8 +323,8 @@
             //login info insert
             $logintuple = array (
                 ":bind1" => htmlspecialchars($_POST['username']),
-                ":bind2" => htmlspecialchars($_POST['password'])
-               //  ":bind2" => password_hash($_POST['password'], PASSWORD_DEFAULT)
+
+                ":bind2" => password_hash($_POST['password'], PASSWORD_DEFAULT)
             );
 
             $loginAlltuples = array ($logintuple);
