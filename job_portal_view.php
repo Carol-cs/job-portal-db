@@ -29,65 +29,57 @@
     </head>
         <h2>Display Selected Attributes from Selected Table</h2>
         <?php
+            if (connectToDB()) {
+                global $db_conn;
+                $tables = executePlainSQL("SELECT table_name FROM all_tables WHERE owner = 'ORA_XLI2801'");
+
+                disconnectFromDB();
+            }
+            
             if (isset($_GET['table'])) {
                 $selectedTable = $_GET['table'];
 
-                $tableAttributes = [
-                    "UserLogInfo" => ["UserName", "PassWord"],
-                    "Users" => ["UserName", "Name", "EmailAddress", "PhoneNumber", "Description"],
-                    "Companies" => ["CompanyId", "CompanyName", "Address"],
-                    "Recruiters" => ["UserName", "CompanyId"],
-                    "JobSeekers" => ["UserName"],
-                    "JobPosts" => ["JobPostId", "RecruiterId", "Title", "Location", "Salary", "PostDate", "JobType", "Description", "Deadline", "Requirements", "NumOfApplications"],
-                    "Resumes" => ["Resume", "JobSeekerId"],
-                    "Applications" => ["ApplicationId", "RecruiterId", "JobPostId", "CreateDate", "CoverLetter", "Resume", "Status", "ApplyDate"],
-                    "ScheduledInterviews" => ["InterviewId", "JobPostId", "Location", "InterviewMode", "DateTime", "TimeZone"],
-                    "Applications_ScheduledInterviews" => ["InterviewId", "ApplicationId"],
-                    "Interviewers_Attend" => ["InterviewerId", "InterviewId", "Name", "ContactNum"],
-                    "LocationDetails" => ["PostalCode", "City", "Province"],
-                    "CareerFairs" => ["EventId", "EventName", "PostalCode", "Location", "EventDate"],
-                    "Companies_CareerFairs" => ["CompanyId", "EventId"],
-                    "JobSeekers_CareerFairs" => ["JobSeekerId", "EventId"]           
-                ];
-
-                // checkboxes for attributes inside selected table
-                if (array_key_exists($selectedTable, $tableAttributes)) {
-                    echo "<form method='get' action='job_portal_view.php'>";
-                    echo "<input type='hidden' name='selectedTable' value='$selectedTable'>";
-                    echo "<label for='attributes[]'>Choose attribute(s) for $selectedTable:</label><br>";
-                    foreach ($tableAttributes[$selectedTable] as $attribute) {
-                        echo "<input type='checkbox' id='$attribute' name='attributes[]' value='$attribute'>";
-                        echo "<label for='$attribute'>$attribute</label><br>";
+                if (connectToDB()) {
+                    $attributesResult = executePlainSQL("SELECT column_name FROM all_tab_columns WHERE table_name = '$selectedTable' AND owner = 'ORA_XLI2801'");
+                    $tableAttributes = [];
+            
+                    while ($row = oci_fetch_array($attributesResult, OCI_ASSOC)) {
+                        $tableAttributes[] = $row['COLUMN_NAME'];
                     }
-                    echo "<br><input type='submit' value='Submit' name='searchSubmit'>";
-                    echo "</form>";
-
-                    echo "<form method='get' action='job_portal_view.php'>";
-                    echo "<input type='submit' value='Go back to select table'>";
-                    echo "</form>";
-                } else {
-                    echo "<p>Selected table does not exist or has no attributes.</p>";
+            
+                    disconnectFromDB();
+            
+                    if (count($tableAttributes) > 0) {
+                        echo "<form method='get' action='job_portal_view.php'>";
+                        echo "<input type='hidden' name='selectedTable' value='$selectedTable'>";
+                        echo "<label for='attributes[]'>Choose attribute(s) for $selectedTable:</label><br>";
+                        foreach ($tableAttributes as $attribute) {
+                            echo "<input type='checkbox' id='$attribute' name='attributes[]' value='$attribute'>";
+                            echo "<label for='$attribute'>$attribute</label><br>";
+                        }
+                        echo "<br><input type='submit' value='Submit' name='searchSubmit'>";
+                        echo "</form>";
+            
+                        echo "<form method='get' action='job_portal_view.php'>";
+                        echo "<input type='submit' value='Go back to select table'>";
+                        echo "</form>";
+                    } else {
+                        echo "<p>Selected table does not exist or has no attributes.</p>";
+                    }
                 }
             } else { // if no table selected, display drop down
                 ?>
                 <form method="get" action="job_portal_view.php">
                     <label for="table">Choose a table:</label>
                     <select id="table" name="table">
-                        <option value="UserLogInfo">UserLogInfo</option>
-                        <option value="Users">Users</option>
-                        <option value="Companies">Companies</option>
-                        <option value="Recruiters">Recruiters</option>
-                        <option value="JobSeekers">Job Seekers</option>
-                        <option value="JobPosts">Job Posts</option>
-                        <option value="Resumes">Resumes</option>
-                        <option value="Applications">Applications</option>
-                        <option value="ScheduledInterviews">Scheduled Interviews</option>
-                        <option value="Applications_ScheduledInterviews">Applications and Scheduled Interviews</option>
-                        <option value="Interviewers_Attend">Interviewers Attend</option>
-                        <option value="LocationDetails">Location Details</option>
-                        <option value="CareerFairs">Career Fairs</option>
-                        <option value="Companies_CareerFairs">Companies and Career Fairs</option>
-                        <option value="JobSeekers_CareerFairs">JobSeekers and Career Fairs</option>
+                    <?php
+                        while ($row = oci_fetch_array($tables, OCI_ASSOC)) {
+                            foreach ($row as $column) {
+                                echo "<option value=\"$column\">$column</option>";
+                            }
+                        }
+                    ?>
+                    }
                     </select>
                     <br><br>
                     <input type="submit" value="Submit">
