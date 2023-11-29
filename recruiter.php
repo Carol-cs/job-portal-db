@@ -28,8 +28,8 @@ error_reporting(E_ALL);
 // Set some parameters
 
 // Database access configuration
-$config["dbuser"] = "ora_xli2801";			// change "cwl" to your own CWL
-$config["dbpassword"] = "a80002512";	// change to 'a' + your student number
+$config["dbuser"] = "ora_carolm03";			// change "cwl" to your own CWL
+$config["dbpassword"] = "a17849571";	// change to 'a' + your student number
 $config["dbserver"] = "dbhost.students.cs.ubc.ca:1522/stu";
 $db_conn = NULL;	// login credentials are used in connectToDB()
 
@@ -177,38 +177,60 @@ if (isset($_SESSION['username'])) {
 				<th>Actions</th>
 			  </tr>";
 	
-		while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
-			$dateString = $row["FORMATTEDDATETIME"];
-			$date = new DateTime($dateString);
-			$formattedDateString = $date->format('F j, Y g:i A');
-			$contactNum = $row["CONTACTNUM"] ?? '';
-	
-			echo "<tr>
-					<td>{$row["INTERVIEWID"]}</td>
-					<td>{$row["INTERVIEWLOCATION"]}</td>
-					<td>{$row["INTERVIEWMODE"]}</td>
-					<td>{$formattedDateString}</td>
-					<td>{$row["INTERVIEWTIMEZONE"]}</td>
-					<td>
-					 ID: {$row["INTERVIEWERID"]}<br>
-					 Name: {$row["NAME"]}<br>
-					 Contact: {$contactNum}<br>
+			  $processedInterviews = array(); // To keep track of processed interview IDs
 
-					
-					</td>
-					<td>
-						<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
-							<input type='hidden' id='editInterviewRequest' name='editInterviewRequest'>
-							<button type='submit' name='editInterview'  value='" . htmlspecialchars(json_encode($row)) . "'>Edit</button>
-						</form>
-						<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
-							<input type='hidden' id='deleteInterviewRequest' name='deleteInterviewRequest'>
-							<button type='submit' name='deleteInterview' value='{$row["INTERVIEWID"]}'>Delete</button>
-						</form>
-					</td>
-				  </tr>";
-		}
-
+			  while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
+				  $dateString = $row["FORMATTEDDATETIME"];
+				  $date = new DateTime($dateString);
+				  $formattedDateString = $date->format('F j, Y g:i A');
+		  
+				  $interviewId = $row["INTERVIEWID"];
+		  
+				  // Check if the interview ID has already been processed
+				  if (!in_array($interviewId, $processedInterviews)) {
+					  echo "<tr>
+							  <td>{$interviewId}</td>
+							  <td>{$row["INTERVIEWLOCATION"]}</td>
+							  <td>{$row["INTERVIEWMODE"]}</td>
+							  <td>{$formattedDateString}</td>
+							  <td>{$row["INTERVIEWTIMEZONE"]}</td>
+							  <td>";
+		  
+					  // Query to get interviewers for the current interview
+					  $interviewersQuery = executePlainSQL("
+						  SELECT
+							  IA.InterviewerId,
+							  IA.Name,
+							  IA.ContactNum
+						  FROM
+							  Interviewers_Attend IA
+						  WHERE
+							  IA.InterviewId = '{$interviewId}'
+					  ");
+		  
+					  while ($interviewer = OCI_Fetch_Array($interviewersQuery, OCI_ASSOC)) {
+						  $contactNum = $interviewer["CONTACTNUM"] ?? '';
+						  echo "ID: {$interviewer["INTERVIEWERID"]}<br>";
+						  echo "Name: {$interviewer["NAME"]}<br>";
+						  echo "Contact: {$contactNum}<br><br>";
+					  }
+		  
+					  echo "</td>
+							  <td>
+								  <form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
+									  <input type='hidden' id='editInterviewRequest' name='editInterviewRequest'>
+									  <button type='submit' name='editInterview'  value='" . htmlspecialchars(json_encode($row)) . "'>Edit</button>
+								  </form>
+								  <form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
+									  <input type='hidden' id='deleteInterviewRequest' name='deleteInterviewRequest'>
+									  <button type='submit' name='deleteInterview' value='{$row["INTERVIEWID"]}'>Delete</button>
+								  </form>
+							  </td>
+						  </tr>";
+		  
+					array_push($processedInterviews, $interviewId);
+				  }
+			  }
 
 		echo "</table>";
 		
@@ -357,17 +379,6 @@ if (isset($_SESSION['username'])) {
         echo "<label for='interviewTimezone'>Timezone*:</label>
               <input type='text' name='interviewTimezone' value='{$rowData['INTERVIEWTIMEZONE']}' required><br>";
 
-
-        // display interviewer info
-        echo "<label for='interviewerId'>Interviewer ID*:</label>
-              <input type='text' name='interviewerId' value='{$rowData['INTERVIEWERID']}' required><br>";
-
-        echo "<label for='interviewerName'>Interviewer Name*:</label>
-              <input type='text' name='interviewerName' value='{$rowData['NAME']}' required><br>";
-
-        echo "<label for='interviewerContactNum'>Interviewer Contact Number (Eg. 123-456-7890):</label>
-              <input type='text' name='interviewerContactNum' value='{$contactNum}'><br>";
-
         echo "<button type='submit' name='saveEditInterview' value='{$rowData['INTERVIEWID']}'>Save Changes</button>";
         echo "</form>";
 
@@ -390,53 +401,17 @@ if (isset($_SESSION['username'])) {
 	{	
 
 		global $db_conn, $success;
-
-		$originalData = executePlainSQL(
-			"SELECT Location, InterviewMode, TO_CHAR(DateTime, 'YYYY-MM-DD\"T\"HH24:MI') AS FormattedDateTime, TimeZone 
-			FROM ScheduledInterviews WHERE InterviewId={$interviewId}");
-		
-		$row = OCI_Fetch_Array($originalData, OCI_ASSOC);
-
-
-		if (!preg_match('/^\d+$/', $_POST['interviewerId'])) {
-			echo "<p style='color: red;'>Invalid interviewer Id, should be a postive integer, please try again.</p>";
-			return;
-		}
-
-		if (!preg_match('/^[a-zA-Z\s]+$/', $_POST['interviewerName'])) {
-			echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
-			return;
-		}
-
-		if (!empty($_POST['interviewerContactNum']) && !preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['interviewerContactNum'])) {
-			echo "<p style='color: red;'>Invalid format for interviewer's contact number, please try again.</p>";
-			return;
-		}
-
-
 		//Getting the values from user and insert data into the table
-		$tuple1 = array(
+		$tuple = array(
 			":bind1" => htmlspecialchars($_POST['interviewLocation']),
 			":bind2" => htmlspecialchars($_POST['interviewMode']),
 			":bind3" => $_POST['interviewDatetime'],
 			":bind4" => htmlspecialchars($_POST['interviewTimezone'])
 		);
 
-		$alltuples1 = array(
-			$tuple1
+		$alltuples = array(
+			$tuple
 		);
-
-		$tuple2 = array(
-			":bind5" => htmlspecialchars($_POST['interviewerId']),
-			":bind6" => htmlspecialchars($_POST['interviewerName']),
-			":bind7" => htmlspecialchars($_POST['interviewerContactNum'])
-		);
-
-		$alltuples2 = array(
-			$tuple2
-		);
-
-
 
 		executeBoundSQL("
 		UPDATE ScheduledInterviews
@@ -445,48 +420,13 @@ if (isset($_SESSION['username'])) {
 			DateTime = TO_DATE(:bind3, 'YYYY-MM-DD\"T\"HH24:MI'),
 			TimeZone = :bind4
 		WHERE InterviewId ='{$interviewId}'
-	", $alltuples1);
+	", $alltuples);
 
 			oci_commit($db_conn);
-
-		if ($success) {
-			executeBoundSQL("
-			UPDATE Interviewers_Attend
-			SET InterviewerId = :bind5,
-				Name = :bind6,
-				ContactNum = :bind7
-			WHERE InterviewId = '{$interviewId}'
-		", $alltuples2);
-
-			oci_commit($db_conn);
-			if ($success){
-				echo "<p style='color: green;'>Interview was edited successfully!</p>";
-
-			} else{
-				// set back to original data
-				$tuple1 = array(
-					":bind1" => htmlspecialchars($row["LOCATION"]),
-					":bind2" => htmlspecialchars($row["INTERVIEWMODE"]),
-					":bind3" => $row['FORMATTEDDATETIME'],
-					":bind4" => htmlspecialchars($row["TIMEZONE"])
-				);
-		
-				$alltuples1 = array(
-					$tuple1
-				);
-				executeBoundSQL("
-				UPDATE ScheduledInterviews
-				SET Location = :bind1,
-					InterviewMode =  :bind2,
-					DateTime = TO_DATE(:bind3, 'YYYY-MM-DD\"T\"HH24:MI'),
-					TimeZone = :bind4
-				WHERE InterviewId = '{$interviewId}'
-			", $alltuples1);
-				oci_commit($db_conn);
-				echo "<p style='color: red;'>Fail to edit the interview due to entered interviewer's info.</p>";
-			}
-		} else {
-			echo "<p style='color: red;'>Fail to edit the interview.</p>";
+		if ($success){
+			echo "<p style='color: green;'>Interview was edited successfully</p>";
+		} else{
+			echo "<p style='color: red;'>Fail to edit the interview</p>";
 		}
 
 
@@ -515,81 +455,140 @@ if (isset($_SESSION['username'])) {
 			  <input type='text' name='interviewTimezone' required><br>";
 	
 		// Add form fields for interviewer details
-		echo "<label for='interviewerId'>Interviewer Id*:</label>
-			  <input type='text' name='interviewerId' required><br>";
 
-		echo "<label for='interviewerName'>Interviewer Name*:</label>
-			  <input type='text' name='interviewerName' required><br>";
-	
-		echo "<label for='interviewerContactNum'>Interviewer Contact Number (Eg. 123-456-7890):</label>
-			  <input type='text' name='interviewerContactNum'><br>";
-	
+		// Add dropdown for selecting the number of interviewers
+		echo "<label for='numOfInterviewers'>Number of Interviewers:</label>
+		<select name='numOfInterviewers' id='numOfInterviewers'>
+		<option value='No Select' disabled selected>Select Number of Interviewers</option>
+			<option value='1'>1</option>
+			<option value='2'>2</option>
+			<option value='3'>3</option>
+			<option value='4'>4</option>
+		</select><br>";
+
+		// Add form fields for interviewer details based on the selected number
+		echo "<div id='interviewerFields'>
+			
+		
+		</div>";
+
 		echo "<button type='submit' name='saveNewInterview' value='{$arr}'>Save New Interview</button>";
 		echo "</form>";
+
+		// JavaScript for dynamically generating interviewer fields
+		echo "<script>
+				document.getElementById('numOfInterviewers').addEventListener('change', function () {
+					var numOfInterviewers = this.value;
+					var interviewerFieldsContainer = document.getElementById('interviewerFields');
+					interviewerFieldsContainer.innerHTML = '';
+
+					for (var i = 1; i <= numOfInterviewers; i++) {
+						var interviewerId= document.createElement('label');
+						interviewerId.textContent = 'Interviewer ' + i + ' ';
+						interviewerFieldsContainer.appendChild(interviewerId);
+
+						var interviewerIdNum= document.createElement('input');
+						interviewerIdNum.type = 'hidden';
+						interviewerIdNum.name = 'interviewerIdNum[]';
+						interviewerIdNum.value = i;
+						interviewerFieldsContainer.appendChild(interviewerIdNum);
+
+						var interviewerNameField = document.createElement('input');
+						interviewerNameField.type = 'text';
+						interviewerNameField.name = 'interviewerName[]';
+						interviewerNameField.placeholder = 'Name';
+						interviewerNameField.required = true;
+						interviewerFieldsContainer.appendChild(interviewerNameField);
+						
+
+						var interviewerContactNumField = document.createElement('input');
+						interviewerContactNumField.type = 'text';
+						interviewerContactNumField.name = 'interviewerContactNum[]';
+						interviewerContactNumField.placeholder = 'Contact Number';
+						interviewerFieldsContainer.appendChild(interviewerContactNumField);
+
+						var interviewerContactNumFormat= document.createElement('small');
+						interviewerContactNumFormat.textContent = 'Pattern: 123-456-7890';
+						interviewerFieldsContainer.appendChild(interviewerContactNumFormat);
+
+						interviewerFieldsContainer.appendChild(document.createElement('br'));
+					}
+				});
+				</script>";
 	}
-	
+	function generateInterviewerFields(){
+
+	}
 
 	function handleSaveNewInterviewRequest($arr) {
 		global $db_conn, $success;
 		$arrData = json_decode(htmlspecialchars_decode($arr), true);
-
-		if (!preg_match('/^\d+$/', $_POST['interviewerId'])) {
-			echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
-			return;
-		}
-
-
-		if (!preg_match('/^[a-zA-Z\s]+$/', $_POST['interviewerName'])) {
-			echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
-			return;
-		}
-
-		if (!empty($_POST['interviewerContactNum']) && !preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['interviewerContactNum'])) {
-			echo "<p style='color: red;'>Invalid format for interviewer's contact number, please try again.</p>";
-			return;
-		}
-
-
 
 		$applicationId = $arrData['APPLICATIONID'];
 		$interviewLocation = htmlspecialchars($_POST['interviewLocation']);
 		$interviewMode = htmlspecialchars($_POST['interviewMode']);
 		$interviewDatetime = $_POST['interviewDatetime'];
 		$interviewTimeZone = htmlspecialchars($_POST['interviewTimezone']);
-		$interviewerId = htmlspecialchars($_POST['interviewerId']);
-		$interviewerName = htmlspecialchars($_POST['interviewerName']);
-		$interviewerContactNum = htmlspecialchars($_POST['interviewerContactNum']);
+
 
 		$jobPostId = $arrData['JOBPOSTID'];
 
-		
+		if (isset($_POST['numOfInterviewers'])) {
+			$numOfInterviewers = $_POST['numOfInterviewers'];
+			if (!is_numeric($_POST['numOfInterviewers'])){
+				echo "<p style='color: red;'>Remember to select at least one interviewer</p>";
+				return;
+			}
+		} else {
+			echo "<p style='color: red;'>Remember to select at least one interviewer</p>";
+			return;
+		}
+
+
+		$interviewerIds = $_POST['interviewerIdNum'];
+		$interviewerNames = $_POST['interviewerName'];
+		$interviewerContactNums = $_POST['interviewerContactNum'];
+
 		executePlainSQL("INSERT INTO ScheduledInterviews VALUES (InterviewId_Sequence.nextval, '$jobPostId', '$interviewLocation', '$interviewMode', TO_DATE('$interviewDatetime', 'YYYY-MM-DD\"T\"HH24:MI'), '$interviewTimeZone')");
+		oci_commit($db_conn);
 		$result = executePlainSQL("SELECT InterviewId_Sequence.currval FROM dual");
+		$interviewIdRow = OCI_Fetch_Array($result, OCI_ASSOC);
+		$interviewId = $interviewIdRow['CURRVAL'];
+		executePlainSQL("INSERT INTO Applications_Scheduledinterviews VALUES ('$interviewId', '$applicationId')");
 		oci_commit($db_conn);
 
-		if ($success){
-			while ($interviewIdRow = OCI_Fetch_Array($result, OCI_ASSOC)){
-				$interviewId = $interviewIdRow['CURRVAL'];
-				executePlainSQL("INSERT INTO Interviewers_Attend VALUES ('$interviewId', '$interviewerId', '$interviewerName', '$interviewerContactNum')");
-				if ($success){
-					executePlainSQL("INSERT INTO Applications_Scheduledinterviews VALUES ('$interviewId', '$applicationId')");
-				} else{
-					echo "<p style='color: red;'>Fail to schedule the interview due to entered interviewer's info.</p>";
-					executePlainSQL("DELETE FROM ScheduledInterviews WHERE interviewId={$interviewId}");
-				}
+		for ($i = 0; $i < count($interviewerIds); $i++) {
+			$interviewerId = $interviewerIds[$i];
+			$interviewerName = $interviewerNames[$i];
+			$interviewerContactNum = $interviewerContactNums[$i];
+
+			if (!preg_match('/^[a-zA-Z\s]+$/', $interviewerName)) {
+				echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
+				return;
 			}
-		} else{
-			echo "<p style='color: red;'>Fail to schedule the interview.</p>";
+	
+			if (!empty($interviewerContactNum) && !preg_match('/^\d{3}-\d{3}-\d{4}$/', $interviewerContactNum)) {
+				echo "<p style='color: red;'>Invalid format for interviewer's contact number, please try again.</p>";
+				return;
+			}
+
+			if ($success){
+				executePlainSQL("INSERT INTO Interviewers_Attend VALUES ('$interviewerId', '$interviewId', '$interviewerName', '$interviewerContactNum')");
+					oci_commit($db_conn);
+					if (!$success){echo "<p style='color: red;'>Fail to schedule the interview due to entered interviewer's info.</p>";
+						executePlainSQL("DELETE FROM ScheduledInterviews WHERE interviewId={$interviewId}");
+						oci_commit($db_conn);
+					}
+			} else{
+				echo "<p style='color: red;'>Fail to schedule the interview.</p>";
+				return;
+			}
 		}
 
-		if ($success) {
-			echo "<p style='color: green;'>Interview was scheduled successfully!</p>";
-		} else {
-			echo "<p style='color: red;'>Fail to schedule the interview.</p>";
+		if ($success){
+			echo "<p style='color: green;'>Interview was sheduled successfully!</p>";
 		}
 		
-
-
 	}
 
 	// all routes checker for recruiter reviewing application and scedule interviews
@@ -963,7 +962,7 @@ if (isset($_SESSION['username'])) {
 	// HANDLE ALL POST ROUTES
 	// A better coding practice is to have one method that reroutes your requests accordingly. It will make it easier to add/remove functionality.
 	function handlePOSTRequest()
-	{
+	{	var_dump($_POST);
 		if (connectToDB()) {
 			if (array_key_exists('saveNewInterviewRequest', $_POST) && array_key_exists('saveNewInterview', $_POST)) {
 				handleSaveNewInterviewRequest($_POST['saveNewInterview']);
