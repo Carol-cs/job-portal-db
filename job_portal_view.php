@@ -25,12 +25,9 @@
     </head>
         <h2>Display Selected Attributes</h2>
         <?php
-            if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['tables'])) {
-                // Process submitted form data
+            if (isset($_GET['tables'])) {
                 $selectedTable = $_GET['tables'];
 
-                // Replace this with your logic to fetch attributes dynamically based on the selected table
-                // Sample attributes for demonstration purposes
                 $tableAttributes = [
                     "UserLogInfo" => ["UserName", "PassWord"],
                     "Users" => ["UserName", "Name", "EmailAddress", "PhoneNumber", "Description"],
@@ -49,7 +46,7 @@
                     "JobSeekers_CareerFairs" => ["JobSeekerId", "EventId"]           
                 ];
 
-                // Display checkboxes for attributes of the selected table
+                // checkboxes for attributes inside selected table
                 if (array_key_exists($selectedTable, $tableAttributes)) {
                     echo "<form method='get' action='job_portal_view.php'>";
                     echo "<input type='hidden' name='selectedTable' value='$selectedTable'>";
@@ -67,8 +64,7 @@
                 } else {
                     echo "<p>Selected table does not exist or has no attributes.</p>";
                 }
-            } else {
-                // Display dropdown to select table
+            } else { // if no table selected, display drop down
                 ?>
                 <form method="get" action="job_portal_view.php">
                     <label for="tables">Choose a table:</label>
@@ -88,7 +84,6 @@
                         <option value="CareerFairs">Career Fairs</option>
                         <option value="Companies_CareerFairs">Companies and Career Fairs</option>
                         <option value="JobSeekers_CareerFairs">JobSeekers and Career Fairs</option>
-                        <!-- Add more table options here -->
                     </select>
                     <br><br>
                     <input type="submit" value="Submit">
@@ -204,9 +199,9 @@
 
             $result = executePlainSQL("SELECT ". $attributes . " FROM ". $_GET["selectedTable"]);
 
+            // generate table to display result
             echo "<table border='1'><tr>";
 
-            // Display table headers based on selected attributes
             foreach ($_GET['attributes'] as $attribute) {
                 echo "<th>$attribute</th>";
             }
