@@ -18,15 +18,19 @@
   <?php
     // Start the session
     session_start();
+    $success = True; //keep track of errors so it redirects the page only if there are no errors
+    $db_conn = NULL; // edit the login credentials in connectToDB()
+    $show_debug_alert_messages = False; // set to True if you want alerts to show you which methods are being triggered (see how it is used in debugAlertMessage())
+
     ?>
   <html>
     <head>
         <title>Job Portal</title>
     </head>
-        <h2>Display Selected Attributes</h2>
+        <h2>Display Selected Attributes from Selected Table</h2>
         <?php
-            if (isset($_GET['tables'])) {
-                $selectedTable = $_GET['tables'];
+            if (isset($_GET['table'])) {
+                $selectedTable = $_GET['table'];
 
                 $tableAttributes = [
                     "UserLogInfo" => ["UserName", "PassWord"],
@@ -67,8 +71,8 @@
             } else { // if no table selected, display drop down
                 ?>
                 <form method="get" action="job_portal_view.php">
-                    <label for="tables">Choose a table:</label>
-                    <select id="tables" name="tables">
+                    <label for="table">Choose a table:</label>
+                    <select id="table" name="table">
                         <option value="UserLogInfo">UserLogInfo</option>
                         <option value="Users">Users</option>
                         <option value="Companies">Companies</option>
@@ -92,6 +96,7 @@
             }
             ?>
             <a href="job_portal.php"><button>Go Back to Main Page</button></a>
+            <br><br>
 
 
         <?php

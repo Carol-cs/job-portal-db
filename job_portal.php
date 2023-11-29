@@ -218,8 +218,14 @@
         ?>
 
         <hr />
+
         <h2>View All Table</h2>
         <a href="job_portal_view.php"><button>View All Table</button></a>
+
+        <hr />
+
+        <h2>Find User(s)</h2>
+        <a href="find_user.php"><button>Find User(s)</button></a>
         <hr />
 
 
@@ -227,23 +233,21 @@
         <form method="POST" action="job_portal.php">
             <input type="hidden" id="insertUserQueryRequest" name="insertUserQueryRequest">
             
-            Username* <input type="text" name="username" required="required"> <br /><br />
-            Password* <input type="password" name="password" required="required"> <br /><br />
+            Username* <input type="text" name="username" required="required"> <br><br>
+            Password* <input type="password" name="password" required="required"> <br><br>
 
-            User Type:
+            <label for="userTypeSelect">User Type:</label>
             <select name="userType" id="userTypeSelect" required="required">
                 <option disabled selected value> -- select an option -- </option>
                 <option value="recruiter" name="recruiter">Recruiter</option>
                 <option value="jobseeker" name="jobseeker">Job Seeker</option>
             </select>
-            <br /><br />
+            <br><br>
             
-            Name*  <input type="text" name="name" required="required"> <br /><br />
-            Email Address* <input type="email" name="email" required="required"> <br /><br />
-
-            Phone Number (Eg. 123-456-7890) <input type="text" name="phone"> <br /><br />
-
-            Description <input type="text" name="description"> <br /><br />
+            Name*  <input type="text" name="name" required="required"> <br><br>
+            Email Address* <input type="email" name="email" required="required"> <br><br>
+            Phone Number (Eg. 123-456-7890) <input type="text" name="phone"> <br><br>
+            Description <input type="text" name="description"> <br><br>
 
             <div id="companyInfo" style="display: none;">
                 <label for="companyOption">Company:</label>
@@ -252,14 +256,14 @@
                     <option value="existing" name="existing">Use Existing Company ID</option>
                     <option value="createNew" name="createNew">Create New Company</option>
                 </select>
-                <br /><br />
+                <br><br>
                 <div id="existingCompany" style="display: none;">
-                    Company ID* <input type="text" name="companyID"> <br /><br />
+                    Company ID* <input type="text" name="companyID"> <br><br>
                 </div>
                 <div id="newCompany" style="display: none;">
                     New Company Info:<br />
-                    Company Name* <input type="text" name="companyName"> <br /><br />
-                    Company Address <input type="text" name="companyAddress"> <br /><br />
+                    Company Name* <input type="text" name="companyName"> <br><br>
+                    Company Address <input type="text" name="companyAddress"> <br><br>
                 </div>
             </div>
 
@@ -267,7 +271,6 @@
         </form>
 
         <script>
-            // JavaScript to toggle fields based on user type and company option
             const userTypeSelect = document.getElementById('userTypeSelect');
             const companyInfoDiv = document.getElementById('companyInfo');
             const existingCompanyDiv = document.getElementById('existingCompany');
@@ -277,10 +280,10 @@
             userTypeSelect.addEventListener('change', function () {
                 if (userTypeSelect.value === 'recruiter') {
                     companyInfoDiv.style.display = 'block';
-                    document.getElementById('companyOption').required = true;
+                    companyOption.required = true;
                 } else {
                     companyInfoDiv.style.display = 'none';
-                    document.getElementById('companyOption').required = false;
+                    companyOption.required = false;
                 }
             });
 
@@ -417,17 +420,18 @@
         <form method="POST" action="login_validate.php">
             <input type="hidden" id="loginQueryRequest" name="loginQueryRequest">
             
-            Username: <input type="text" name="username" required="required"> <br /><br />
-            Password: <input type="password" name="password" required="required"> <br /><br />
+            Username: <input type="text" name="username" required="required"> <br><br>
+            Password: <input type="password" name="password" required="required"> <br><br>
 
             <input type="submit" value="Log In" name="loginSubmit">
         </form>
-        <hr />
 
         <?php
         echo "<p style='color: red;'>" . $_SESSION["error_message"] . "</p>";
         session_unset(); 
         ?>
+
+        <hr />
 
         <h2>Count Users</h2>
         <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
