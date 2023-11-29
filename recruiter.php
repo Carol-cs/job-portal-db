@@ -181,8 +181,8 @@ if (isset($_SESSION['username'])) {
 			$dateString = $row["FORMATTEDDATETIME"];
 			$date = new DateTime($dateString);
 			$formattedDateString = $date->format('F j, Y g:i A');
+			$contactNum = $row["CONTACTNUM"] ?? '';
 	
-
 			echo "<tr>
 					<td>{$row["INTERVIEWID"]}</td>
 					<td>{$row["INTERVIEWLOCATION"]}</td>
@@ -192,7 +192,7 @@ if (isset($_SESSION['username'])) {
 					<td>
 					 ID: {$row["INTERVIEWERID"]}<br>
 					 Name: {$row["NAME"]}<br>
-					 Contact: {$row["CONTACTNUM"]}<br>
+					 Contact: {$contactNum}<br>
 
 					
 					</td>
@@ -238,22 +238,20 @@ if (isset($_SESSION['username'])) {
         $username=$_SESSION["username"];
         $result = executePlainSQL(
             "SELECT
-                Applications.ApplicationId,
-                Users.Name AS JobSeekerName,
-                Applications.Resume,
-                Applications.CoverLetter,
-                Applications.Status,
-                Applications.CreateDate,
-                Applications.ApplyDate
-            FROM
-                Applications,
-                Resumes,
-                Users
-            WHERE
-                Applications.RecruiterId = '$username'
-                AND Resumes.Resume = Applications.Resume
-                AND Resumes.JobSeekerId = Users.UserName
-				AND Applications.Status <> 'Incomplete application'");
+			Applications.ApplicationId,
+			Users.Name AS JobSeekerName,
+			Applications.Resume,
+			Applications.CoverLetter,
+			Applications.Status,
+			Applications.CreateDate,
+			Applications.ApplyDate
+		FROM
+			Applications
+		JOIN Resumes ON Resumes.Resume = Applications.Resume
+		JOIN Users ON Resumes.JobSeekerId = Users.UserName
+		WHERE
+			Applications.RecruiterId = '$username'
+			AND Applications.Status <> 'Incomplete application'");
 		oci_commit($db_conn);
         displayApplications($result);
     }
@@ -329,45 +327,46 @@ if (isset($_SESSION['username'])) {
 	function handleEditInterviewRequest($row)
 	{	global $db_conn;
 		$rowData = json_decode(htmlspecialchars_decode($row), true);
+		$contactNum = $rowData["CONTACTNUM"] ?? '';
 
 
-		echo "editing interview for rows: {$rowData["INTERVIEWID"]}";
+		echo "Editing interview for id: {$rowData["INTERVIEWID"]}<br>";
 
         echo "<label>Interview ID: {$rowData['INTERVIEWID']}</label>";
 
         echo "<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>";
-        echo "<input type='hidden' name='saveEditInterviewRequest' value='{$rowData['INTERVIEWID']}'>";
+        echo "<input type='hidden' name='saveEditInterviewRequest' value='{$rowData["INTERVIEWID"]}'>";
 
-        echo "<label for='interviewLocation'>Location:</label>
-              <input type='text' name='interviewLocation' value='{$rowData['INTERVIEWLOCATION']}'><br>";
+        echo "<label for='interviewLocation'>Location*:</label>
+              <input type='text' name='interviewLocation' value='{$rowData['INTERVIEWLOCATION']}' required><br>";
 
-        echo "<label for='interviewMode'>Interview Mode:</label>
+        echo "<label for='interviewMode'>Interview Mode*:</label>
               <select name='interviewMode'>
                 <option value='In-Person' " . ($rowData['INTERVIEWMODE'] == 'In-Person' ? 'selected' : '') . ">In-Person</option>
                 <option value='Online' " . ($rowData['INTERVIEWMODE'] == 'Online' ? 'selected' : '') . ">Online</option>
               </select><br>";
 
-        echo "<label for='datetime'>Date and Time: </label>
+        echo "<label for='datetime'>Date and Time*: </label>
 
 				<input
 				type='datetime-local'
 				id='interviewDatetime'
 				name='interviewDatetime'
-				value='{$rowData['FORMATTEDDATETIME']}'><br>";
+				value='{$rowData['FORMATTEDDATETIME']}' required><br>";
 
-        echo "<label for='interviewTimezone'>Timezone:</label>
-              <input type='text' name='interviewTimezone' value='{$rowData['INTERVIEWTIMEZONE']}'><br>";
+        echo "<label for='interviewTimezone'>Timezone*:</label>
+              <input type='text' name='interviewTimezone' value='{$rowData['INTERVIEWTIMEZONE']}' required><br>";
 
 
         // display interviewer info
-        echo "<label for='interviewerId'>Interviewer ID:</label>
-              <input type='text' name='interviewerId' value='{$rowData['INTERVIEWERID']}'><br>";
+        echo "<label for='interviewerId'>Interviewer ID*:</label>
+              <input type='text' name='interviewerId' value='{$rowData['INTERVIEWERID']}' required><br>";
 
-        echo "<label for='interviewerName'>Interviewer Name:</label>
-              <input type='text' name='interviewerName' value='{$rowData['NAME']}'><br>";
+        echo "<label for='interviewerName'>Interviewer Name*:</label>
+              <input type='text' name='interviewerName' value='{$rowData['NAME']}' required><br>";
 
-        echo "<label for='interviewerContactNum'>Interviewer Contact Number:</label>
-              <input type='text' name='interviewerContactNum' value='{$rowData['CONTACTNUM']}'><br>";
+        echo "<label for='interviewerContactNum'>Interviewer Contact Number (Eg. 123-456-7890):</label>
+              <input type='text' name='interviewerContactNum' value='{$contactNum}'><br>";
 
         echo "<button type='submit' name='saveEditInterview' value='{$rowData['INTERVIEWID']}'>Save Changes</button>";
         echo "</form>";
@@ -388,15 +387,28 @@ if (isset($_SESSION['username'])) {
 
 	
     function handleSaveEditInterviewRequest($interviewId)
-	{
+	{	
+
 		global $db_conn, $success;
+
+		$originalData = executePlainSQL(
+			"SELECT Location, InterviewMode, TO_CHAR(DateTime, 'YYYY-MM-DD\"T\"HH24:MI') AS FormattedDateTime, TimeZone 
+			FROM ScheduledInterviews WHERE InterviewId={$interviewId}");
+		
+		$row = OCI_Fetch_Array($originalData, OCI_ASSOC);
+
+
+		if (!preg_match('/^\d+$/', $_POST['interviewerId'])) {
+			echo "<p style='color: red;'>Invalid interviewer Id, should be a postive integer, please try again.</p>";
+			return;
+		}
 
 		if (!preg_match('/^[a-zA-Z\s]+$/', $_POST['interviewerName'])) {
 			echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
 			return;
 		}
 
-		if (!preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['interviewerContactNum'])) {
+		if (!empty($_POST['interviewerContactNum']) && !preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['interviewerContactNum'])) {
 			echo "<p style='color: red;'>Invalid format for interviewer's contact number, please try again.</p>";
 			return;
 		}
@@ -415,7 +427,7 @@ if (isset($_SESSION['username'])) {
 		);
 
 		$tuple2 = array(
-			":bind5" => $_POST['interviewerId'],
+			":bind5" => htmlspecialchars($_POST['interviewerId']),
 			":bind6" => htmlspecialchars($_POST['interviewerName']),
 			":bind7" => htmlspecialchars($_POST['interviewerContactNum'])
 		);
@@ -432,21 +444,52 @@ if (isset($_SESSION['username'])) {
 			InterviewMode =  :bind2,
 			DateTime = TO_DATE(:bind3, 'YYYY-MM-DD\"T\"HH24:MI'),
 			TimeZone = :bind4
-		WHERE InterviewId = {$interviewId}
+		WHERE InterviewId ='{$interviewId}'
 	", $alltuples1);
-		executeBoundSQL("
+
+			oci_commit($db_conn);
+
+		if ($success) {
+			executeBoundSQL("
 			UPDATE Interviewers_Attend
-			SET Name = :bind6,
+			SET InterviewerId = :bind5,
+				Name = :bind6,
 				ContactNum = :bind7
-			WHERE InterviewId = {$interviewId} AND InterviewerId = :bind5
+			WHERE InterviewId = '{$interviewId}'
 		", $alltuples2);
 
-		oci_commit($db_conn);
-		if ($success) {
-			echo "<p style='color: green;'>Interview was edited successfully!</p>";
+			oci_commit($db_conn);
+			if ($success){
+				echo "<p style='color: green;'>Interview was edited successfully!</p>";
+
+			} else{
+				// set back to original data
+				$tuple1 = array(
+					":bind1" => htmlspecialchars($row["LOCATION"]),
+					":bind2" => htmlspecialchars($row["INTERVIEWMODE"]),
+					":bind3" => $row['FORMATTEDDATETIME'],
+					":bind4" => htmlspecialchars($row["TIMEZONE"])
+				);
+		
+				$alltuples1 = array(
+					$tuple1
+				);
+				executeBoundSQL("
+				UPDATE ScheduledInterviews
+				SET Location = :bind1,
+					InterviewMode =  :bind2,
+					DateTime = TO_DATE(:bind3, 'YYYY-MM-DD\"T\"HH24:MI'),
+					TimeZone = :bind4
+				WHERE InterviewId = '{$interviewId}'
+			", $alltuples1);
+				oci_commit($db_conn);
+				echo "<p style='color: red;'>Fail to edit the interview due to entered interviewer's info.</p>";
+			}
 		} else {
 			echo "<p style='color: red;'>Fail to edit the interview.</p>";
 		}
+
+
 
 	}
 
@@ -456,26 +499,29 @@ if (isset($_SESSION['username'])) {
 		echo "<input type='hidden' name='saveNewInterviewRequest' id='saveNewInterviewRequest'>";
 	
 		// Add form fields for new interview details
-		echo "<label for='interviewLocation'>Location:</label>
+		echo "<label for='interviewLocation'>Location*:</label>
 			  <input type='text' name='interviewLocation' required><br>";
 	
-		echo "<label for='interviewMode'>Interview Mode:</label>
+		echo "<label for='interviewMode'>Interview Mode*:</label>
 			  <select name='interviewMode' required>
 				  <option value='In-Person'>In-Person</option>
 				  <option value='Online'>Online</option>
 			  </select><br>";
 	
-		echo "<label for='interviewDatetime'>Date and Time:</label>
+		echo "<label for='interviewDatetime'>Date and Time*:</label>
 			  <input type='datetime-local' name='interviewDatetime' required><br>";
 	
-		echo "<label for='interviewTimezone'>Timezone:</label>
+		echo "<label for='interviewTimezone'>Timezone*:</label>
 			  <input type='text' name='interviewTimezone' required><br>";
 	
 		// Add form fields for interviewer details
-		echo "<label for='interviewerName'>Interviewer Name:</label>
+		echo "<label for='interviewerId'>Interviewer Id*:</label>
+			  <input type='text' name='interviewerId' required><br>";
+
+		echo "<label for='interviewerName'>Interviewer Name*:</label>
 			  <input type='text' name='interviewerName' required><br>";
 	
-		echo "<label for='interviewerContactNum'>Interviewer Contact Number:</label>
+		echo "<label for='interviewerContactNum'>Interviewer Contact Number (Eg. 123-456-7890):</label>
 			  <input type='text' name='interviewerContactNum'><br>";
 	
 		echo "<button type='submit' name='saveNewInterview' value='{$arr}'>Save New Interview</button>";
@@ -487,12 +533,18 @@ if (isset($_SESSION['username'])) {
 		global $db_conn, $success;
 		$arrData = json_decode(htmlspecialchars_decode($arr), true);
 
+		if (!preg_match('/^\d+$/', $_POST['interviewerId'])) {
+			echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
+			return;
+		}
+
+
 		if (!preg_match('/^[a-zA-Z\s]+$/', $_POST['interviewerName'])) {
 			echo "<p style='color: red;'>Invalid format for interviewer's name, please try again.</p>";
 			return;
 		}
 
-		if (!preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['interviewerContactNum'])) {
+		if (!empty($_POST['interviewerContactNum']) && !preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['interviewerContactNum'])) {
 			echo "<p style='color: red;'>Invalid format for interviewer's contact number, please try again.</p>";
 			return;
 		}
@@ -504,6 +556,7 @@ if (isset($_SESSION['username'])) {
 		$interviewMode = htmlspecialchars($_POST['interviewMode']);
 		$interviewDatetime = $_POST['interviewDatetime'];
 		$interviewTimeZone = htmlspecialchars($_POST['interviewTimezone']);
+		$interviewerId = htmlspecialchars($_POST['interviewerId']);
 		$interviewerName = htmlspecialchars($_POST['interviewerName']);
 		$interviewerContactNum = htmlspecialchars($_POST['interviewerContactNum']);
 
@@ -512,15 +565,23 @@ if (isset($_SESSION['username'])) {
 		
 		executePlainSQL("INSERT INTO ScheduledInterviews VALUES (InterviewId_Sequence.nextval, '$jobPostId', '$interviewLocation', '$interviewMode', TO_DATE('$interviewDatetime', 'YYYY-MM-DD\"T\"HH24:MI'), '$interviewTimeZone')");
 		$result = executePlainSQL("SELECT InterviewId_Sequence.currval FROM dual");
-		
-		while ($interviewIdRow = OCI_Fetch_Array($result, OCI_ASSOC)){
-			$interviewId = $interviewIdRow['CURRVAL'];
-			
-			executePlainSQL("INSERT INTO Interviewers_Attend VALUES ('$interviewId', InterviewerId_Sequence.nextval, '$interviewerName', '$interviewerContactNum')");
-			executePlainSQL("INSERT INTO Applications_Scheduledinterviews VALUES ('$interviewId', '$applicationId')");
+		oci_commit($db_conn);
+
+		if ($success){
+			while ($interviewIdRow = OCI_Fetch_Array($result, OCI_ASSOC)){
+				$interviewId = $interviewIdRow['CURRVAL'];
+				executePlainSQL("INSERT INTO Interviewers_Attend VALUES ('$interviewId', '$interviewerId', '$interviewerName', '$interviewerContactNum')");
+				if ($success){
+					executePlainSQL("INSERT INTO Applications_Scheduledinterviews VALUES ('$interviewId', '$applicationId')");
+				} else{
+					echo "<p style='color: red;'>Fail to schedule the interview due to entered interviewer's info.</p>";
+					executePlainSQL("DELETE FROM ScheduledInterviews WHERE interviewId={$interviewId}");
+				}
+			}
+		} else{
+			echo "<p style='color: red;'>Fail to schedule the interview.</p>";
 		}
 
-		oci_commit($db_conn);
 		if ($success) {
 			echo "<p style='color: green;'>Interview was scheduled successfully!</p>";
 		} else {
@@ -559,15 +620,19 @@ if (isset($_SESSION['username'])) {
 			$rowsFetched = false; // used to track if have result
 			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
 				$rowsFetched = true;
+				$jobLocation = $row["JOBLOCATION"] ?? '';
+				$salary = $row["SALARY"] ?? '';
+				$requirements = $row["REQUIREMENTS"] ?? '';
+
 				echo "<div style='border: 1px solid #ccc; margin-bottom: 20px; padding: 10px;'>
 						<h3>{$row["JOBTITLE"]}</h3>
 						<p><strong>Company:</strong> {$row["COMPANYNAME"]}</p>
-						<p><strong>Location:</strong> {$row["JOBLOCATION"]}</p>
+						<p><strong>Location:</strong> {$jobLocation}</p>
 						<p><strong>Job Type:</strong> {$row["JOBTYPE"]}</p>
-						<p><strong>Salary:</strong> {$row["SALARY"]}</p>
+						<p><strong>Salary:</strong> {$salary}</p>
 						<p><strong>Post Date:</strong> {$row["POSTDATE"]}</p>
 						<p><strong>Description:</strong> {$row["DESCRIPTION"]}</p>
-						<p><strong>Requirements:</strong> {$row["REQUIREMENTS"]}</p>
+						<p><strong>Requirements:</strong> {$requirements}</p>
 						<p><strong>Deadline:</strong> {$row["DEADLINE"]}</p>
 						<p><strong>Num of Applications:</strong> {$row["NUMOFAPPLICATIONS"]}</p>
 						<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
@@ -642,31 +707,30 @@ if (isset($_SESSION['username'])) {
 <hr>
 	<h2>Recruiter Create Job Posts</h2>
 		<form method="POST" action="recruiter.php">
-		<label for="jobTitle">Job Title:</label>
+		<label for="jobTitle">Job Title*:</label>
 		<input type="text" name="jobTitle" required><br>
 
 		<label for="jobLocation">Job Location:</label>
 		<input type="text" name="jobLocation"><br>
 
-		<label for="jobType">Job Type:</label>
+		<label for="jobType">Job Type*:</label>
 		<input type="text" name="jobType" required><br>
 
 		<label for="salary">Salary:</label>
 		<input type="text" name="salary"><br>
 
-		<label for="description">Description:</label>
+		<label for="description">Description*:</label>
 		<textarea name="description" rows="4" required></textarea><br>
 
 		<label for="requirements">Requirements:</label>
 		<textarea name="requirements" rows="4"></textarea><br>
 
-		<label for="deadline">Deadline:</label>
+		<label for="deadline">Deadline*:</label>
 		<input type="date" name="deadline" required><br>
 		<input type="hidden" id="createJobPostsRequest" name="createJobPostsRequest">
 		<input type="submit" value="Create Job Posts" name="createJobPosts"></p>
 		</form>
 
-		<hr>
 
 		<?php
 
@@ -680,7 +744,7 @@ if (isset($_SESSION['username'])) {
 			// Assign today's date for PostDate
 			$postDate = date('Y-m-d');
 
-			if (!is_numeric( $_POST['salary'])) {
+			if (!empty($_POST['salary']) && !is_numeric( $_POST['salary'])) {
                 echo "<p style='color: red;'>Invalid salary, salary should be a number, please try again.</p>";
                 return;
             }
@@ -727,7 +791,66 @@ if (isset($_SESSION['username'])) {
 		
 		?>
 
+<hr>
+	<h2>Find jobseekers who have applied for all jobs (DIVISION)</h2>
+		<form method="GET" action="recruiter.php">
+		<input type="hidden" id="divisionQueryRequest" name="divisionQueryRequest">
+		<input type="submit" name="divisionQuery"></p>
+		</form>
 
+
+		<?php
+
+
+		function handleDivisionQueryRequest(){
+			global $db_conn;
+
+			$result = executePlainSQL(
+				"SELECT JS.UserName AS JobSeekerUserName
+				FROM JobSeekers JS
+				WHERE NOT EXISTS
+					(( SELECT JP.JobPostId
+						FROM JobPosts JP)
+						MINUS
+					   (SELECT A.JobPostId
+							FROM Applications A, Resumes R
+							WHERE A.Resume = R.Resume
+							AND R.JobSeekerId = JS.UserName))"
+			);
+
+			$rowsFetched = false;
+
+			echo "<table border='1'>";
+			echo "<tr>
+					<th>Job Seeker</th>
+				</tr>";
+		
+			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
+				$rowsFetched = true;
+				
+				echo "<tr>
+						<td>{$row["JOBSEEKERUSERNAME"]}</td>
+						</tr>";
+
+				}
+				echo "</table>";
+				if (!$rowsFetched) {
+					echo "<p style='color: blue;'>No job seekers applied for all jobs</p>";
+				}
+	
+				oci_commit($db_conn);
+		}
+			
+
+
+			// all routes checker for recruiter viewing job posts
+		if ( isset($_GET['divisionQuery'])) {
+			handleGETRequest();
+		}
+		
+		
+		
+		?>
 
 	<?php
 	// The following code will be parsed as PHP
@@ -841,7 +964,6 @@ if (isset($_SESSION['username'])) {
 	// A better coding practice is to have one method that reroutes your requests accordingly. It will make it easier to add/remove functionality.
 	function handlePOSTRequest()
 	{
-		var_dump($_POST);
 		if (connectToDB()) {
 			if (array_key_exists('saveNewInterviewRequest', $_POST) && array_key_exists('saveNewInterview', $_POST)) {
 				handleSaveNewInterviewRequest($_POST['saveNewInterview']);
@@ -877,6 +999,8 @@ if (isset($_SESSION['username'])) {
                 handleDisplayApplicationsRequest();
             }elseif (array_key_exists('displayJobPosts', $_GET)){
                 handleDisplayJobPostsRequest();
+            }elseif (array_key_exists('divisionQuery', $_GET)){
+                handleDivisionQueryRequest();
             }
 			disconnectFromDB();
 		}

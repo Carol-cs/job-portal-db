@@ -259,7 +259,7 @@ if (isset($_SESSION['username'])) {
 			<label for='coverLetter'>Cover Letter (Link):</label>
 			<input type='text' name='coverLetter' placeholder='Enter link'><br>
 			<label for='resume'>Resume (Link):</label>
-			<input type='text' name='resume' placeholder='Enter link'><br>
+			<input type='text' name='resume' placeholder='Enter link' required><br>
 			<input type="submit" value="Create Applications" name="createDraftApplications"></p>
 		</form>
 
@@ -360,16 +360,19 @@ if (isset($_SESSION['username'])) {
 					$isButtonDisabled = true;
 				}
 
-				
+				$jobLocation = $row["JOBLOCATION"] ?? '';
+				$salary = $row["SALARY"] ?? '';
+				$requirements = $row["REQUIREMENTS"] ?? '';
+
 				echo "<div style='border: 1px solid #ccc; margin-bottom: 20px; padding: 10px;'>
 						<h3>{$row["JOBTITLE"]}</h3>
 						<p><strong>Company:</strong> {$row["COMPANYNAME"]}</p>
-						<p><strong>Location:</strong> {$row["JOBLOCATION"]}</p>
+						<p><strong>Location:</strong> {$jobLocation}</p>
 						<p><strong>Job Type:</strong> {$row["JOBTYPE"]}</p>
-						<p><strong>Salary:</strong> {$row["SALARY"]}</p>
+						<p><strong>Salary:</strong> {$salary}</p>
 						<p><strong>Post Date:</strong> {$row["POSTDATE"]}</p>
 						<p><strong>Description:</strong> {$row["DESCRIPTION"]}</p>
-						<p><strong>Requirements:</strong> {$row["REQUIREMENTS"]}</p>
+						<p><strong>Requirements:</strong> {$requirements}</p>
 						<p><strong>Deadline:</strong> {$row["DEADLINE"]}</p>
 						<p><strong>Num of Applications:</strong> {$row["NUMOFAPPLICATIONS"]}</p>
 						<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
@@ -478,16 +481,20 @@ if (isset($_SESSION['username'])) {
 			}
 		
 			$row = OCI_Fetch_Array($result, OCI_ASSOC);
+
+			$jobLocation = $row["JOBLOCATION"] ?? '';
+			$salary = $row["SALARY"] ?? '';
+			$requirements = $row["REQUIREMENTS"] ?? '';
 		
 			echo "<div style='border: 1px solid #ccc; margin-bottom: 20px; padding: 10px;'>
 				<h3>{$row["JOBTITLE"]}</h3>
 				<p><strong>Company:</strong> {$row["COMPANYNAME"]}</p>
-				<p><strong>Location:</strong> {$row["JOBLOCATION"]}</p>
+				<p><strong>Location:</strong> {$jobLocation}</p>
 				<p><strong>Job Type:</strong>{$row["JOBTYPE"]}</p>
-				<p><strong>Salary:</strong> {$row["SALARY"]}</p>
+				<p><strong>Salary:</strong> {$salary}</p>
 				<p><strong>Post Date:</strong> {$row["POSTDATE"]}</p>
 				<p><strong>Description:</strong> {$row["DESCRIPTION"]}</p>
-				<p><strong>Requirements:</strong> {$row["REQUIREMENTS"]}</p>
+				<p><strong>Requirements:</strong> {$requirements}</p>
 				<p><strong>Deadline:</strong> {$row["DEADLINE"]}</p>
 				<p><strong>Num of Applications:</strong> {$row["NUMOFAPPLICATIONS"]}</p>
 				<hr>
@@ -514,7 +521,7 @@ if (isset($_SESSION['username'])) {
 				<input type='text' name='coverLetter' placeholder='Enter link'><br>
 				
 				<label for='resume'>Resume (Link):</label>
-				<input type='text' name='resume' placeholder='Enter link'><br>
+				<input type='text' name='resume' placeholder='Enter link' required><br>
 		
 				<button type='submit' name='submitApplication' value='{$row["JOBPOSTID"]}'>Submit</button>
 			</form>
@@ -642,6 +649,211 @@ if (isset($_SESSION['username'])) {
 
 
 
+
+<hr>
+	<h2>Find the Average Salary for Specified Job Title</h2>
+		<form method="GET" action="job_seeker.php">
+			<input type="hidden" id="findAvgSalaryByTitleRequest" name="findAvgSalaryByTitleRequest">
+			<input type="submit" value="Start to search" name="findAvgSalaryByTitle">
+		</form>
+
+		<?php
+		function handleFindAvgSalaryByTitleRequest() {
+			global $db_conn;
+
+			$result = executePlainSQL(
+				"SELECT DISTINCT TITLE FROM JOBPOSTS");
+
+			oci_commit($db_conn);
+			
+			$jobTitles = [];
+			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
+				array_push($jobTitles, $row["TITLE"]);
+			}
+
+
+			if (count($jobTitles) == 0){
+				echo "<p style='color: blue;'>No job posts found</p>";
+				return;
+			}
+
+		
+			echo " <form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
+					<input type='hidden' name='findAvgSalaryBySpecifiedTitleRequest' id='findAvgSalaryBySpecifiedTitleRequest'>
+					<select name='selectedTitle'>";
+					
+			// Populate the dropdown 
+			foreach ($jobTitles as $title) {
+				echo "<option value='$title'>$title</option>";
+			}
+		
+			echo "</select>
+				<button type='submit' name='findAvgSalaryBySpecifiedTitle'>Find</button>
+				</form>";
+
+
+		}
+
+		function  handleFindAvgSalaryBySpecifiedTitleRequest($title){
+			global $db_conn;$result = executePlainSQL(
+				"SELECT Title, AVG(Salary) AS AvgSalary
+				FROM JobPosts
+				WHERE Title = '$title'
+				GROUP BY TITLE"
+			);
+
+			$rowsFetched = false;
+
+			echo "<table border='1'>";
+			echo "<tr>
+					<th>Job Title</th>
+					<th>Average Salary</th>
+				</tr>";
+		
+			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
+				$rowsFetched = true;
+				$avgSalary = $row["AVGSALARY"] ?? "N/A";
+				
+				echo "<tr>
+						<td>{$row["TITLE"]}</td>
+						<td>{$avgSalary}</td>
+						</tr>";
+
+				}
+				echo "</table>";
+				if (!$rowsFetched) {
+					echo "<p style='color: blue;'>No results found</p>";
+				}
+	
+				oci_commit($db_conn);
+		}
+		if (isset($_POST['findAvgSalaryBySpecifiedTitle'])){
+			handlePOSTRequest();
+		} else if (isset($_GET['findAvgSalaryByTitle'])){
+			handleGETRequest();
+		} 
+
+
+	?>
+
+
+
+<hr>
+	<h2>Find the Average Salary for Each Company That Have More Than One Job Posted</h2>
+		<form method="GET" action="job_seeker.php">
+			<input type="hidden" id="findAvgSalaryByCompanyRequest" name="findAvgSalaryByCompanyRequest">
+			<input type="submit" value="Find" name="findAvgSalaryByCompany">
+		</form>
+
+
+		<?php
+		function handleFindAvgSalaryByCompanyRequest() {
+			global $db_conn;
+
+			$result = executePlainSQL(
+				"SELECT C.CompanyId AS CompanyId, C.CompanyName AS CompanyName, AVG(JP.Salary) AS AvgSalary
+				FROM Companies C, Recruiters R, JobPosts JP
+				WHERE C.CompanyId = R.CompanyId
+				  AND R.UserName = JP.RecruiterId
+				GROUP BY C.CompanyId, C.CompanyName
+				HAVING COUNT(*) > 1
+				ORDER BY AvgSalary DESC"
+			);
+
+			$rowsFetched = false;
+
+			echo "<table border='1'>";
+			echo "<tr>
+					<th>Company Id</th>
+					<th>Company Name</th>
+					<th>Average Salary</th>
+				</tr>";
+		
+			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
+				$rowsFetched = true;
+				$avgSalary = $row["AVGSALARY"] ?? "N/A";
+				
+				echo "<tr>
+						<td>{$row["COMPANYID"]}</td>
+						<td>{$row["COMPANYNAME"]}</td>
+						<td>{$avgSalary}</td>
+						</tr>";
+
+				}
+				echo "</table>";
+				if (!$rowsFetched) {
+					echo "<p style='color: blue;'>No results found</p>";
+				}
+	
+				oci_commit($db_conn);
+		}
+
+		if (isset($_GET['findAvgSalaryByCompany'])){
+			handleGETRequest();
+		}
+
+
+	?>
+
+
+<hr>
+	<h2>Find the Company with Recruiters Posting Jobs Exceeding the Overall Average Salary of All Job Posts</h2>
+		<form method="GET" action="job_seeker.php">
+			<input type="hidden" id="findAvgSalaryExceedsOverallAvgRequest" name="findAvgSalaryExceedsOverallAvgRequest">
+			<input type="submit" value="Find" name="findAvgSalaryExceedsOverallAvg">
+		</form>
+
+
+		<?php
+		function handleFindAvgSalaryExceedsOverallAvgRequest() {
+			global $db_conn;
+
+			$result = executePlainSQL(
+				"SELECT C.CompanyId AS COMPANYID, C.CompanyName AS COMPANYNAME, AVG(JP.Salary) AS AvgSalary
+				FROM Companies C, Recruiters R, JobPosts JP
+				WHERE C.CompanyId = R.CompanyId AND R.UserName = JP.RecruiterId
+				GROUP BY C.CompanyId, C.CompanyName
+				HAVING AVG(JP.Salary) > (SELECT
+											 AVG(Salary)
+										 FROM JobPosts)"
+			);
+
+			$rowsFetched = false;
+
+			echo "<table border='1'>";
+			echo "<tr>
+					<th>Company Id</th>
+					<th>Company Name</th>
+					<th>Average Salary</th>
+				</tr>";
+		
+			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
+				$rowsFetched = true;
+				$avgSalary = $row["AVGSALARY"] ?? "N/A";
+				
+				echo "<tr>
+						<td>{$row["COMPANYID"]}</td>
+						<td>{$row["COMPANYNAME"]}</td>
+						<td>{$avgSalary}</td>
+						</tr>";
+
+				}
+				echo "</table>";
+				if (!$rowsFetched) {
+					echo "<p style='color: blue;'>No results found</p>";
+				}
+	
+				oci_commit($db_conn);
+		}
+
+		if (isset($_GET['findAvgSalaryExceedsOverallAvg'])){
+			handleGETRequest();
+		}
+
+
+	?>
+
+
 	<?php
 	// The following code will be parsed as PHP
 
@@ -756,7 +968,6 @@ if (isset($_SESSION['username'])) {
 	function handlePOSTRequest()
 	{	
 		
-		var_dump($_POST);
 		if (connectToDB()) {
 			if (array_key_exists('submitApplicationRequest', $_POST) && array_key_exists('submitApplication', $_POST)) {
 				handleSubmitApplicationRequest($_POST['submitApplication'], $_POST['coverLetter'], $_POST['resume']);
@@ -770,6 +981,8 @@ if (isset($_SESSION['username'])) {
 				handleApplyWithRequest($_POST['applyWith'], $_POST['selectedApplication']);
 			} else if (array_key_exists('deleteResumesRequest', $_POST)  && array_key_exists('deleteResumes', $_POST)) {
 				handleDeleteResumesRequest($_POST['deleteResumes']);
+			}  else if (array_key_exists('findAvgSalaryBySpecifiedTitleRequest', $_POST)  && array_key_exists('findAvgSalaryBySpecifiedTitle', $_POST)) {
+				handleFindAvgSalaryBySpecifiedTitleRequest($_POST['selectedTitle']);
 			} 
 			
 			disconnectFromDB();
@@ -788,11 +1001,16 @@ if (isset($_SESSION['username'])) {
                 handleDisplayIncompleteApplicationsRequest();
             }elseif (array_key_exists('displayResumes', $_GET)){
                 handleDisplayResumesRequest();
+            }elseif (array_key_exists('findAvgSalaryByTitle', $_GET)){
+                handleFindAvgSalaryByTitleRequest();
+            }elseif (array_key_exists('findAvgSalaryByCompany', $_GET)){
+                handleFindAvgSalaryByCompanyRequest();
+            }elseif (array_key_exists('findAvgSalaryExceedsOverallAvg', $_GET)){
+                handleFindAvgSalaryExceedsOverallAvgRequest();
             }
 			disconnectFromDB();
 		}
 	}
-	
 
 
 

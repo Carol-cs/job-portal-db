@@ -1,4 +1,3 @@
-
 <!-- Test Oracle file for UBC CPSC304
   Created by Jiemin Zhang
   Modified by Simona Radu
@@ -8,7 +7,6 @@
   Specifically, it will drop a table, create a table, insert values update
   values, and then query for values
   IF YOU HAVE A TABLE CALLED "demoTable" IT WILL BE DESTROYED
-
   The script assumes you already have a server set up All OCI commands are
   commands to the Oracle libraries. To get the file to work, you must place it
   somewhere where your Apache server can run it, and you must rename it to have
@@ -47,42 +45,43 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
 function handleLoginRequest() {
     global $db_conn;
 
-    $username = htmlspecialchars($_POST['username']);
-    $password = htmlspecialchars($_POST['password']);
-    $result = executePlainSQL("SELECT COUNT(*) FROM UserLogInfo WHERE UserName = '$username' AND PassWord = '$password'");
+        $username = $_POST['username'];
+        $result = executePlainSQL("SELECT PassWord FROM UserLogInfo WHERE UserName = '$username'");
 
-    if (($row = oci_fetch_row($result)) != false) {
-        $count = $row[0];
-        if ($count == 1) {
-            echo("success");
-            $type = executePlainSQL("SELECT COUNT(*) FROM JobSeekers WHERE UserName = '$username'");
-            if (($row = oci_fetch_row($type)) != false) {
-                $type = $row[0];
-                if ($type == 1) {
-                    header('Location: job_seeker.php?username='. $username);
-                    exit();
-                } else {
-                    header('Location: recruiter.php?username='. $username);
-                    exit();
-                }
-            }else {
-                echo("login failed...");
+        if (($row = oci_fetch_row($result)) != false) {
+            if (count($row) != 1) {
                 $_SESSION['error_message'] = "Invalid username or password";
                 header('Location: job_portal.php');
                 exit();
+            } else {
+                $password = $row[0];
+                // if (!password_verify($_POST['password'], $password)) {
+				if ($password !== $_POST['password']) {
+                    $_SESSION['error_message'] = "Invalid username or password";
+                    header('Location: job_portal.php');
+                    exit();
+                }
+                $type = executePlainSQL("SELECT COUNT(*) FROM JobSeekers WHERE UserName = '$username'");
+                if (($row = oci_fetch_row($type)) != false) {
+                    $type = $row[0];
+                    if ($type == 1) {
+                        header('Location: job_seeker.php?username='. $username);
+                        exit();
+                    } else {
+                        header('Location: recruiter.php?username='. $username);
+                        exit();
+                    }
+                }else {
+                    $_SESSION['error_message'] = "Invalid username or password";
+                    header('Location: job_portal.php');
+                    exit();
+                }
             }
-        } else {
-            echo("login failed...1");
+        }else {
             $_SESSION['error_message'] = "Invalid username or password";
             header('Location: job_portal.php');
             exit();
         }
-    }else {
-        echo("login failed...2");
-        $_SESSION['error_message'] = "Invalid username or password";
-        header('Location: job_portal.php');
-        exit();
-    }
 }
 
 

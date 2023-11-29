@@ -34,221 +34,14 @@
             <p><input type="submit" value="Reset" name="reset"></p>
         </form>
 
-        <hr />
-
-        <h2>User Sign-up</h2>
-        <form method="POST" action="job_portal.php">
-            <input type="hidden" id="insertUserQueryRequest" name="insertUserQueryRequest">
-            
-            Username: <input type="text" name="username" required="required"> <br /><br />
-            Password: <input type="password" name="password" required="required"> <br /><br />
-
-            User Type:
-            <select name="userType" id="userTypeSelect" required="required">
-                <option disabled selected value> -- select an option -- </option>
-                <option value="recruiter" name="recruiter">Recruiter</option>
-                <option value="jobseeker" name="jobseeker">Job Seeker</option>
-            </select>
-            <br /><br />
-            
-            Name: <input type="text" name="name" required="required"> <br /><br />
-            Email Address: <input type="text" name="email" required="required"> <br /><br />
-            Phone Number (Eg. 123-456-7890): <input type="text" name="phone"> <br /><br />
-            Description: <input type="text" name="description"> <br /><br />
-
-            <div id="companyInfo" style="display: none;">
-                <label for="companyOption">Company:</label>
-                <select name="companyOption" id="companyOption">
-                    <option disabled selected value> -- select an option -- </option>
-                    <option value="existing" name="existing">Use Existing Company ID</option>
-                    <option value="createNew" name="createNew">Create New Company</option>
-                </select>
-                <br /><br />
-                <div id="existingCompany" style="display: none;">
-                    Company ID: <input type="text" name="companyID"> <br /><br />
-                </div>
-                <div id="newCompany" style="display: none;">
-                    New Company Info:<br />
-                    Company Name: <input type="text" name="companyName"> <br /><br />
-                    Company Address: <input type="text" name="companyAddress"> <br /><br />
-                </div>
-            </div>
-
-            <input type="submit" value="Sign Up" name="insertSubmit">
-        </form>
-
-        <script>
-            // JavaScript to toggle fields based on user type and company option
-            const userTypeSelect = document.getElementById('userTypeSelect');
-            const companyInfoDiv = document.getElementById('companyInfo');
-            const existingCompanyDiv = document.getElementById('existingCompany');
-            const newCompanyDiv = document.getElementById('newCompany');
-            const companyOption = document.getElementById('companyOption');
-
-            userTypeSelect.addEventListener('change', function () {
-                if (userTypeSelect.value === 'recruiter') {
-                    companyInfoDiv.style.display = 'block';
-                    document.getElementById('companyOption').required = true;
-                } else {
-                    companyInfoDiv.style.display = 'none';
-                    document.getElementById('companyOption').required = false;
-                }
-            });
-
-            companyOption.addEventListener('change', function () {
-                if (companyOption.value === 'existing') {
-                    existingCompanyDiv.style.display = 'block';
-                    newCompanyDiv.style.display = 'none';
-                    document.getElementById('companyID').required = true;
-                    document.getElementById('companyName').required = false;
-                } else if (companyOption.value === 'createNew') {
-                    existingCompanyDiv.style.display = 'none';
-                    newCompanyDiv.style.display = 'block';
-                    document.getElementById('companyID').required = false;
-                    document.getElementById('companyName').required = true;
-                }
-            });
-        </script>
-
-        <hr />
-
-        <h2>User Log-in</h2>
-        <form method="POST" action="login_validate.php">
-            <input type="hidden" id="loginQueryRequest" name="loginQueryRequest">
-            
-            Username: <input type="text" name="username" required="required"> <br /><br />
-            Password: <input type="password" name="password" required="required"> <br /><br />
-
-            <input type="submit" value="Log In" name="loginSubmit">
-        </form>
-        <hr />
-
-        <h2>Count the Tuples in UserLogInfo</h2>
-        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="countUserLogInfoTupleRequest" name="countUserLogInfoTupleRequest">
-            <input type="submit" name="countTuples1"></p>
-        </form>
-
-        <h2>Count the Tuples in Companies</h2>
-        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="countCompaniesTupleRequest" name="countCompaniesTupleRequest">
-            <input type="submit" name="countTuples2"></p>
-        </form>
-
-        <h2>Count the Tuples in Recruiters</h2>
-        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
-            <input type="hidden" id="countRecruitersTupleRequest" name="countRecruitersTupleRequest">
-            <input type="submit" name="countTuples3"></p>
-        </form>
-
         <?php
-		//this tells the system that it's no longer just parsing html; it's now parsing PHP
         $success = True; //keep track of errors so it redirects the page only if there are no errors
         $db_conn = NULL; // edit the login credentials in connectToDB()
         $show_debug_alert_messages = False; // set to True if you want alerts to show you which methods are being triggered (see how it is used in debugAlertMessage())
 
-
-        
-        function debugAlertMessage($message) {
-            global $show_debug_alert_messages;
-
-            if ($show_debug_alert_messages) {
-                echo "<script type='text/javascript'>alert('" . $message . "');</script>";
-            }
-        }
-
-        function executePlainSQL($cmdstr) { //takes a plain (no bound variables) SQL command and executes it
-            //echo "<br>running ".$cmdstr."<br>";
-            global $db_conn, $success;
-
-            $statement = OCIParse($db_conn, $cmdstr);
-            //There are a set of comments at the end of the file that describe some of the OCI specific functions and how they work
-
-            if (!$statement) {
-                echo "<br>Cannot parse the following command: " . $cmdstr . "<br>";
-                $e = OCI_Error($db_conn); // For OCIParse errors pass the connection handle
-                echo htmlentities($e['message']);
-                $success = False;
-            }
-
-            $r = OCIExecute($statement, OCI_DEFAULT);
-            if (!$r) {
-                echo "<br>Cannot execute the following command: " . $cmdstr . "<br>";
-                $e = oci_error($statement); // For OCIExecute errors pass the statementhandle
-                echo htmlentities($e['message']);
-                $success = False;
-            }
-
-			return $statement;
-		}
-
-        function executeBoundSQL($cmdstr, $list) {
-            /* Sometimes the same statement will be executed several times with different values for the variables involved in the query.
-		In this case you don't need to create the statement several times. Bound variables cause a statement to only be
-		parsed once and you can reuse the statement. This is also very useful in protecting against SQL injection.
-		See the sample code below for how this function is used */
-
-			global $db_conn, $success;
-			$statement = OCIParse($db_conn, $cmdstr);
-
-            if (!$statement) {
-                echo "<br>Cannot parse the following command: " . $cmdstr . "<br>";
-                $e = OCI_Error($db_conn);
-                echo htmlentities($e['message']);
-                $success = False;
-            }
-
-            foreach ($list as $tuple) {
-                foreach ($tuple as $bind => $val) {
-                    //echo $val;
-                    //echo "<br>".$bind."<br>";
-                    OCIBindByName($statement, $bind, $val);
-                    unset ($val); //make sure you do not remove this. Otherwise $val will remain in an array object wrapper which will not be recognized by Oracle as a proper datatype
-				}
-
-                $r = OCIExecute($statement, OCI_DEFAULT);
-                if (!$r) {
-                    echo "<br>Cannot execute the following command: " . $cmdstr . "<br>";
-                    $e = OCI_Error($statement); // For OCIExecute errors, pass the statementhandle
-                    echo htmlentities($e['message']);
-                    echo "<br>";
-                    $success = False;
-                }
-            }
-        }
-
-        function connectToDB() {
-            global $db_conn;
-
-            // Your username is ora_(CWL_ID) and the password is a(student number). For example,
-			// ora_platypus is the username and a12345678 is the password.
-            $db_conn = OCILogon("ora_carolm03", "a17849571", "dbhost.students.cs.ubc.ca:1522/stu");
-
-            if ($db_conn) {
-                debugAlertMessage("Database is Connected");
-                return true;
-            } else {
-                debugAlertMessage("Cannot connect to Database");
-                $e = OCI_Error(); // For OCILogon errors pass no handle
-                echo htmlentities($e['message']);
-                return false;
-            }
-        }
-
-        function disconnectFromDB() {
-            global $db_conn;
-
-            debugAlertMessage("Disconnect from Database");
-            OCILogoff($db_conn);
-        }
-
-
-
-
-
-
         function handleResetRequest() {
             global $db_conn;
+            global $success;
             
             $sqlQueries = [
                 "DROP TABLE JOBSEEKERS_CAREERFAIRS",
@@ -270,7 +63,6 @@
                 "DROP SEQUENCE JobPostId_Sequence",
                 "DROP SEQUENCE ApplicationId_Sequence",
                 "DROP SEQUENCE InterviewId_Sequence",
-                "DROP SEQUENCE InterviewerId_Sequence",
                 "DROP SEQUENCE EventId_Sequence",
                 
                 "CREATE TABLE UserLogInfo (
@@ -366,8 +158,6 @@
                     FOREIGN KEY (InterviewId) REFERENCES ScheduledInterviews ON DELETE CASCADE,
                     FOREIGN KEY (ApplicationId) REFERENCES Applications ON DELETE CASCADE
                 )",
-            
-                "CREATE SEQUENCE InterviewerId_Sequence START WITH 1 INCREMENT BY 1",
                 
                 "CREATE TABLE Interviewers_Attend(
                     InterviewerId INTEGER,
@@ -417,8 +207,93 @@
                 executePlainSQL($sqlQuery);
                 OCICommit($db_conn);
             }
+            if ($success == True) {
+                echo ("<p style='color: blue;'>Successfully resetted.</p>");
+            }
         }
 
+		if (isset($_POST['reset'])) {
+            handlePOSTRequest();
+        }
+        ?>
+
+        <hr />
+
+        <h2>User Sign-up</h2>
+        <form method="POST" action="job_portal.php">
+            <input type="hidden" id="insertUserQueryRequest" name="insertUserQueryRequest">
+            
+            Username* <input type="text" name="username" required="required"> <br /><br />
+            Password* <input type="password" name="password" required="required"> <br /><br />
+
+            User Type:
+            <select name="userType" id="userTypeSelect" required="required">
+                <option disabled selected value> -- select an option -- </option>
+                <option value="recruiter" name="recruiter">Recruiter</option>
+                <option value="jobseeker" name="jobseeker">Job Seeker</option>
+            </select>
+            <br /><br />
+            
+            Name*  <input type="text" name="name" required="required"> <br /><br />
+            Email Address* <input type="email" name="email" required="required"> <br /><br />
+            Phone Number (Eg. 123-456-7890) <input type="text" name="phone"> <br /><br />
+            Description <input type="text" name="description"> <br /><br />
+
+            <div id="companyInfo" style="display: none;">
+                <label for="companyOption">Company:</label>
+                <select name="companyOption" id="companyOption">
+                    <option disabled selected value> -- select an option -- </option>
+                    <option value="existing" name="existing">Use Existing Company ID</option>
+                    <option value="createNew" name="createNew">Create New Company</option>
+                </select>
+                <br /><br />
+                <div id="existingCompany" style="display: none;">
+                    Company ID* <input type="text" name="companyID"> <br /><br />
+                </div>
+                <div id="newCompany" style="display: none;">
+                    New Company Info:<br />
+                    Company Name* <input type="text" name="companyName"> <br /><br />
+                    Company Address <input type="text" name="companyAddress"> <br /><br />
+                </div>
+            </div>
+
+            <input type="submit" value="Sign Up" name="insertSubmit">
+        </form>
+
+        <script>
+            // JavaScript to toggle fields based on user type and company option
+            const userTypeSelect = document.getElementById('userTypeSelect');
+            const companyInfoDiv = document.getElementById('companyInfo');
+            const existingCompanyDiv = document.getElementById('existingCompany');
+            const newCompanyDiv = document.getElementById('newCompany');
+            const companyOption = document.getElementById('companyOption');
+
+            userTypeSelect.addEventListener('change', function () {
+                if (userTypeSelect.value === 'recruiter') {
+                    companyInfoDiv.style.display = 'block';
+                    document.getElementById('companyOption').required = true;
+                } else {
+                    companyInfoDiv.style.display = 'none';
+                    document.getElementById('companyOption').required = false;
+                }
+            });
+
+            companyOption.addEventListener('change', function () {
+                if (companyOption.value === 'existing') {
+                    existingCompanyDiv.style.display = 'block';
+                    newCompanyDiv.style.display = 'none';
+                    document.getElementById('companyID').required = true;
+                    document.getElementById('companyName').required = false;
+                } else if (companyOption.value === 'createNew') {
+                    existingCompanyDiv.style.display = 'none';
+                    newCompanyDiv.style.display = 'block';
+                    document.getElementById('companyID').required = false;
+                    document.getElementById('companyName').required = true;
+                }
+            });
+        </script>
+
+        <?php
         function handleInsertUserRequest() {
             global $db_conn, $success;
 
@@ -426,110 +301,245 @@
                 echo "<p style='color: red;'>Invalid username, only alphanumeric characters and underscores are allowed, please try again</p>";
                 return;
             }
-
-            if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)){
-                echo "<p style='color: red;'>Invalid email, please try again.</p>";
-                return;
-            }
-            if (!preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['phone'])) {
-                echo "<p style='color: red;'>Invalid format for phone number, please try again.</p>";
-                return;
-            }
             if (!preg_match('/^[a-zA-Z\s]+$/', $_POST['name'])) {
                 echo "<p style='color: red;'>Invalid format for name, please try again.</p>";
                 return;
             }
-
+            if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)){
+                echo "<p style='color: red;'>Invalid email, please try again.</p>";
+                return;
+            }
+            if (!empty($_POST['phone']) && !preg_match('/^\d{3}-\d{3}-\d{4}$/', $_POST['phone'])) {
+                echo "<p style='color: red;'>Invalid format for phone number, please try again.</p>";
+                return;
+            }
 
             //login info insert
             $logintuple = array (
-                ":bind1" => $_POST['username'],
-                ":bind2" => $_POST['password']
+                ":bind1" => htmlspecialchars($_POST['username']),
+                ":bind2" => htmlspecialchars($_POST['password'])
+               //  ":bind2" => password_hash($_POST['password'], PASSWORD_DEFAULT)
             );
 
             $loginAlltuples = array ($logintuple);
             executeBoundSQL("insert into UserLogInfo values (:bind1, :bind2)", $loginAlltuples);
             OCICommit($db_conn);
+
+            if (!$success) {
+                echo ("<p style='color: red;'>Sign up failed: Username already exists.</p>");
+                return;
+            }
             
-            if ($success == True) {
+            //user insert
+            $userTuple = array(
+                ":bind1" => htmlspecialchars($_POST['username']),
+                ":bind2" => htmlspecialchars($_POST['name']),
+                ":bind3" => htmlspecialchars($_POST['email']),
+                ":bind4" => htmlspecialchars($_POST['phone']),
+                ":bind5" => htmlspecialchars($_POST['description']  , ENT_QUOTES, 'UTF-8')
+            );
 
+            $userAlltuples = array($userTuple);
+            executeBoundSQL("insert into Users values (:bind1, :bind2, :bind3, :bind4, :bind5)", $userAlltuples);
+            OCICommit($db_conn);
 
-                //user insert
-                $userTuple = array(
-                    ":bind1" => htmlspecialchars($_POST['username']),
-                    ":bind2" => htmlspecialchars($_POST['name']),
-                    ":bind3" => htmlspecialchars($_POST['email']),
-                    ":bind4" => htmlspecialchars($_POST['phone']),
-                    ":bind5" =>  htmlspecialchars($_POST['description']  , ENT_QUOTES, 'UTF-8')
-                );
-    
-                $userAlltuples = array($userTuple);
-                executeBoundSQL("insert into Users values (:bind1, :bind2, :bind3, :bind4, :bind5)", $userAlltuples);
+            if (!$success) {
+                echo ("<p style='color: red;'>Sign up failed: Email already exists.</p>");
+                executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
                 OCICommit($db_conn);
+                return;
+            }
 
-                if ($success == True) {
-                    if ($_POST['userType'] == "jobseeker") {
-                        executeBoundSQL("insert into JobSeekers values (:bind1)", $userAlltuples);
-                        OCICommit($db_conn);
+            if ($_POST['userType'] == "jobseeker") {
+                executeBoundSQL("insert into JobSeekers values (:bind1)", $userAlltuples);
+                OCICommit($db_conn);
+                echo ("<p style='color: green;'>Successfully signed up.</p>");
+            } else {
+                if ($_POST['companyOption'] == "createNew") {
+                    $companyTuple = array(
+                        ":bind1" => htmlspecialchars($_POST['companyName']),
+                        ":bind2" => htmlspecialchars($_POST['companyAddress'])
+                    );
+        
+                    $companyAlltuples = array($companyTuple);
+                    executeBoundSQL("insert into Companies values (CompanyId_Sequence.nextval, :bind1, :bind2)", $companyAlltuples);
+                    OCICommit($db_conn);
+                    $companyId = executePlainSQL("SELECT CompanyId_Sequence.currval FROM dual");
+                    $id = oci_fetch_assoc($companyId)['CURRVAL'];
+                    echo "<br> The company id is: " . $id . "<br>";
+                }
+                if ($success) {
+                    if ($_POST['companyOption'] == "existing") {
+                        $id = $_POST['companyID'];
+                    }
+                    //user insert
+                    $recruiterTuple = array(
+                        ":bind1" => $_POST['username'],
+                        ":bind2" => $id
+                    );
+        
+                    $recruiterAlltuples = array($recruiterTuple);
+                    executeBoundSQL("insert into Recruiters values (:bind1, :bind2)", $recruiterAlltuples);
+                    OCICommit($db_conn);
 
-                    } else if ($_POST['userType'] == "recruiter" && ($_POST['companyOption'] == "createNew" || $_POST['companyOption'] == "existing")) {
-                        if ($_POST['companyOption'] == "createNew") {
-                            $companyTuple = array(
-                                ":bind1" => htmlspecialchars($_POST['companyName']),
-                                ":bind2" => htmlspecialchars($_POST['companyAddress'])
-                            );
-                
-                            $companyAlltuples = array($companyTuple);
-                            executeBoundSQL("insert into Companies values (CompanyId_Sequence.nextval, :bind1, :bind2)", $companyAlltuples);
-                            OCICommit($db_conn);
-                            $companyId = executePlainSQL("SELECT CompanyId_Sequence.currval FROM dual");
-                            $id = oci_fetch_assoc($companyId)['CURRVAL'];
-                            echo "<br> The company id is: " . $id . "<br>";
-                        }
-                        if ($success == True) {
-                            if ($_POST['companyOption'] == "existing") {
-                                $id = $_POST['companyID'];
-                            }
-                            //user insert
-                            $recruiterTuple = array(
-                                ":bind1" => $_POST['username'],
-                                ":bind2" => $id
-                            );
-                
-                            $recruiterAlltuples = array($recruiterTuple);
-                            executeBoundSQL("insert into Recruiters values (:bind1, :bind2)", $recruiterAlltuples);
-                            OCICommit($db_conn);
-
-                            if ($success == FALSE) {
-                                // echo "<br> sign up failed <br>";
-                                executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
-                                executeBoundSQL("delete from Users where UserName = (:bind1)", $userAlltuples);
-                                executeBoundSQL("delete from Companies where CompanyId = (:bind2)", $recruiterAlltuples);
-                                OCICommit($db_conn);
-                            }
-                        } else {
-                            echo "<br> Cannot add to recruiter table <br>";
-                            executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
-                            executeBoundSQL("delete from Users where UserName = (:bind1)", $userAlltuples);
-                            OCICommit($db_conn);
-                        }
-                    } else {
-                        echo "<br> No option chosen <br>";
+                    if ($success == FALSE) {
+                        echo ("<p style='color: red;'>Sign up failed: Invalid company ID.</p>");
                         executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
+                        executeBoundSQL("delete from Users where UserName = (:bind1)", $userAlltuples);
+                        executeBoundSQL("delete from Companies where CompanyId = (:bind2)", $recruiterAlltuples);
                         OCICommit($db_conn);
+                    } else {
+                        echo ("<p style='color: green;'>Successfully signed up.</p>");
                     }
                 } else {
-                    echo "<br> Cannot add to user table <br>";
+                    echo ("<p style='color: red;'>Sign up failed: Company already exists</p>");
                     executeBoundSQL("delete from UserLogInfo where UserName = (:bind1)", $loginAlltuples);
+                    executeBoundSQL("delete from Users where UserName = (:bind1)", $userAlltuples);
                     OCICommit($db_conn);
                 }
             }
+        }
 
-            if ($success) {
-                echo "<p style='color: green;'>Sign up successfully!</p>";
-            } else {
-                echo "<p style='color: red;'>Fail to sign Up.</p>";
+        if (isset($_POST['insertSubmit'])) {
+            handlePOSTRequest();
+        }
+        ?>
+
+        <hr />
+
+        <h2>User Log-in</h2>
+        <form method="POST" action="login_validate.php">
+            <input type="hidden" id="loginQueryRequest" name="loginQueryRequest">
+            
+            Username: <input type="text" name="username" required="required"> <br /><br />
+            Password: <input type="password" name="password" required="required"> <br /><br />
+
+            <input type="submit" value="Log In" name="loginSubmit">
+        </form>
+        <hr />
+
+        <?php
+        echo "<p style='color: red;'>" . $_SESSION["error_message"] . "</p>";
+        session_unset(); 
+        ?>
+
+        <h2>Count Users</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countUserLogInfoTupleRequest" name="countUserLogInfoTupleRequest">
+            <input type="submit" name="countTuples1"></p>
+        </form>
+
+        <h2>Count Recruiters</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countRecruitersTupleRequest" name="countRecruitersTupleRequest">
+            <input type="submit" name="countTuples2"></p>
+        </form>
+
+        <h2>Count Job Seekers</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countJobSeekersTupleRequest" name="countJobSeekersTupleRequest">
+            <input type="submit" name="countTuples3"></p>
+        </form>
+
+        <h2>Count Companies</h2>
+        <form method="GET" action="job_portal.php"> <!--refresh page when submitted-->
+            <input type="hidden" id="countCompaniesTupleRequest" name="countCompaniesTupleRequest">
+            <input type="submit" name="countTuples4"></p>
+        </form>
+
+
+        <?php
+        function debugAlertMessage($message) {
+            global $show_debug_alert_messages;
+
+            if ($show_debug_alert_messages) {
+                echo "<script type='text/javascript'>alert('" . $message . "');</script>";
             }
+        }
+
+        function executePlainSQL($cmdstr) { //takes a plain (no bound variables) SQL command and executes it
+            //echo "<br>running ".$cmdstr."<br>";
+            global $db_conn, $success;
+
+            $statement = OCIParse($db_conn, $cmdstr);
+            //There are a set of comments at the end of the file that describe some of the OCI specific functions and how they work
+
+            if (!$statement) {
+                echo "<br>Cannot parse the following command: " . $cmdstr . "<br>";
+                $e = OCI_Error($db_conn); // For OCIParse errors pass the connection handle
+                echo htmlentities($e['message']);
+                $success = False;
+            }
+
+            $r = OCIExecute($statement, OCI_DEFAULT);
+            if (!$r) {
+                echo "<br>Cannot execute the following command: " . $cmdstr . "<br>";
+                $e = oci_error($statement); // For OCIExecute errors pass the statementhandle
+                echo htmlentities($e['message']);
+                $success = False;
+            }
+
+			return $statement;
+		}
+
+        function executeBoundSQL($cmdstr, $list) {
+            /* Sometimes the same statement will be executed several times with different values for the variables involved in the query.
+		In this case you don't need to create the statement several times. Bound variables cause a statement to only be
+		parsed once and you can reuse the statement. This is also very useful in protecting against SQL injection.
+		See the sample code below for how this function is used */
+
+			global $db_conn, $success;
+			$statement = OCIParse($db_conn, $cmdstr);
+
+            if (!$statement) {
+                echo "<br>Cannot parse the following command: " . $cmdstr . "<br>";
+                $e = OCI_Error($db_conn);
+                echo htmlentities($e['message']);
+                $success = False;
+            }
+
+            foreach ($list as $tuple) {
+                foreach ($tuple as $bind => $val) {
+                    //echo $val;
+                    //echo "<br>".$bind."<br>";
+                    OCIBindByName($statement, $bind, $val);
+                    unset ($val); //make sure you do not remove this. Otherwise $val will remain in an array object wrapper which will not be recognized by Oracle as a proper datatype
+				}
+
+                $r = OCIExecute($statement, OCI_DEFAULT);
+                if (!$r) {
+                    echo "<br>Cannot execute the following command: " . $cmdstr . "<br>";
+                    $e = OCI_Error($statement); // For OCIExecute errors, pass the statementhandle
+                    echo htmlentities($e['message']);
+                    echo "<br>";
+                    $success = False;
+                }
+            }
+        }
+
+        function connectToDB() {
+            global $db_conn;
+
+            // Your username is ora_(CWL_ID) and the password is a(student number). For example,
+			// ora_platypus is the username and a12345678 is the password.
+            $db_conn = OCILogon("ora_carolm03", "a17849571", "dbhost.students.cs.ubc.ca:1522/stu");
+
+            if ($db_conn) {
+                debugAlertMessage("Database is Connected");
+                return true;
+            } else {
+                debugAlertMessage("Cannot connect to Database");
+                $e = OCI_Error(); // For OCILogon errors pass no handle
+                echo htmlentities($e['message']);
+                return false;
+            }
+        }
+
+        function disconnectFromDB() {
+            global $db_conn;
+
+            debugAlertMessage("Disconnect from Database");
+            OCILogoff($db_conn);
         }
 
         function handleCountRequest1() {
@@ -560,24 +570,13 @@
             }
         }
 
-        function handleLoginRequest() {
+        function handleCountRequest4() {
             global $db_conn;
 
-            $username = $_POST['username'];
-            $password = $_POST['password'];
-            $result = executePlainSQL("SELECT COUNT(*) FROM UserLogInfo WHERE UserName = '$username' AND PassWord = '$password'");
+            $result = executePlainSQL("SELECT Count(*) FROM JobSeekers");
 
             if (($row = oci_fetch_row($result)) != false) {
-                $count = $row[0];
-                if ($count == 1) {
-                    echo("success");
-                    header('Location:job_seeker.php');
-                    exit();
-                } else {
-                    echo("login failed...");
-                }
-            }else {
-                echo("login failed...2");
+                echo "<br> The number of tuples in Job Seeker: " . $row[0] . "<br>";
             }
         }
 
@@ -607,20 +606,19 @@
                     handleCountRequest2();
                 } else if (array_key_exists('countRecruitersTupleRequest', $_GET)) {
                     handleCountRequest3();
+                } else if (array_key_exists('countJobSeekersTupleRequest', $_GET)) {
+                    handleCountRequest4();
                 }
 
                 disconnectFromDB();
             }
         }
 
-		if (isset($_POST['reset']) || isset($_POST['insertSubmit']) || isset($_POST['loginSubmit'])) {
+		if (isset($_POST['loginSubmit'])) {
             handlePOSTRequest();
-        } else if (isset($_GET['countTuples1']) || isset($_GET['countTuples2']) || isset($_GET['countTuples3'])) {
+        } else if (isset($_GET['countTuples1']) || isset($_GET['countTuples2']) || isset($_GET['countTuples3']) || isset($_GET['countTuples4'])) {
             handleGETRequest();
         }
-
-        echo $_SESSION["error_message"];
-        session_unset(); 
 		?>
 	</body>
 </html>
