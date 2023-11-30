@@ -236,7 +236,7 @@
             Username* <input type="text" name="username" required="required"> <br><br>
             Password* <input type="password" name="password" required="required"> <br><br>
 
-            <label for="userTypeSelect">User Type:</label>
+            <label for="userTypeSelect">User Type* </label>
             <select name="userType" id="userTypeSelect" required="required">
                 <option disabled selected value> -- select an option -- </option>
                 <option value="recruiter" name="recruiter">Recruiter</option>
@@ -250,7 +250,7 @@
             Description <input type="text" name="description"> <br><br>
 
             <div id="companyInfo" style="display: none;">
-                <label for="companyOption">Company:</label>
+                <label for="companyOption">Company* </label>
                 <select name="companyOption" id="companyOption">
                     <option disabled selected value> -- select an option -- </option>
                     <option value="existing" name="existing">Use Existing Company ID</option>
