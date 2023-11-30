@@ -300,10 +300,12 @@ function handleCreateDraftApplicationsRequest($coverLetter, $resume) {
             executePlainSQL(
                 "INSERT INTO Applications
 								VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
-            if (!$success){
-                executePlainSQL("DELETE FROM Resumes WHERE Resume='$resume'");
+            if ($success){
+                echo "<p style='color: green;'>Application was created successfully</p>";
+                return;
             }else{
-                echo "<p style='color: red;'>Fail to submit Application due to Resume URL</p>";
+                executePlainSQL("DELETE FROM Resumes WHERE Resume='$resume'");
+                echo "<p style='color: red;'>Fail to create Application due to duplicate Resume URL</p>";
                 return;
             }
         } else{
@@ -316,9 +318,9 @@ function handleCreateDraftApplicationsRequest($coverLetter, $resume) {
     }
 
     if ($success){
-        echo "<p style='color: green;'>Application was submitted successfully</p>";
+        echo "<p style='color: green;'>Application was created successfully</p>";
     } else{
-        echo "<p style='color: red;'>Fail to submit Application</p>";
+        echo "<p style='color: red;'>Fail to create Application</p>";
     }
 
 
@@ -615,7 +617,9 @@ function handleSubmitApplicationRequest($jobPostId, $coverLetter, $resume) {
 											WHERE Resumes.Resume = '$resume'
 											AND Resumes.JobSeekerId = '$jobSeekerUserName'");
 
+       
         $countResult = OCI_Fetch_Array($result, OCI_ASSOC);
+
         if ($countResult["RESULT"] == 0){ // this job seeker don't have that resume
             executePlainSQL(
                 "INSERT INTO Resumes
@@ -645,7 +649,7 @@ function handleSubmitApplicationRequest($jobPostId, $coverLetter, $resume) {
                 }
 
             }else{
-                echo "<p style='color: red;'>Fail to submit Application due to Resume URL</p>";
+                echo "<p style='color: red;'>Fail to submit Application due to duplicate Resume URL</p>";
                 return;
 
             }
