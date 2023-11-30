@@ -101,6 +101,7 @@ if (isset($_SESSION['username'])) {
         echo "<table border='1'>";
         echo "<tr>
                 <th>Application ID</th>
+				<th>Job Post ID</th>
                 <th>Job Seeker Name</th>
                 <th>Resume</th>
                 <th>Cover Letter</th>
@@ -114,6 +115,7 @@ if (isset($_SESSION['username'])) {
 			$rowsFetched = true;
             $applicationId = $row["APPLICATIONID"];
             $coverLetter = $row["COVERLETTER"] ?? '';
+			$jobPostId = $row["JOBPOSTID"] ?? '';
             if ($coverLetter !== ''){
                 $coverLetterLink = "<a href='{$coverLetter}'>Cover Letter</a>";
             } else{
@@ -128,6 +130,7 @@ if (isset($_SESSION['username'])) {
             $currentStatus = $row["STATUS"];
             echo "<tr>
                     <td>{$applicationId}</td>
+					<td>{$jobPostId}</td>
                     <td>{$row["JOBSEEKERNAME"]}</td>
                     <td>{$resumeLink}</td>
                     <td>{$coverLetterLink}</td>
@@ -169,6 +172,7 @@ if (isset($_SESSION['username'])) {
 		echo "<table border='1'>";
 		echo "<tr>
 				<th>Interview Id</th>
+				<th>Job Post Id</th>
 				<th>Location</th>
 				<th>Interview Mode</th>
 				<th>Date and Time</th>
@@ -190,6 +194,7 @@ if (isset($_SESSION['username'])) {
 				  if (!in_array($interviewId, $processedInterviews)) {
 					  echo "<tr>
 							  <td>{$interviewId}</td>
+							  <td>{$row["JOBPOSTID"]}</td>
 							  <td>{$row["INTERVIEWLOCATION"]}</td>
 							  <td>{$row["INTERVIEWMODE"]}</td>
 							  <td>{$formattedDateString}</td>
@@ -261,6 +266,7 @@ if (isset($_SESSION['username'])) {
         $result = executePlainSQL(
             "SELECT
 			Applications.ApplicationId,
+			Applications.JobPostId,
 			Users.Name AS JobSeekerName,
 			Applications.Resume,
 			Applications.CoverLetter,
@@ -313,6 +319,7 @@ if (isset($_SESSION['username'])) {
             "SELECT
 				ASI.ApplicationId,
 				SI.InterviewId,
+				SI.JobPostId,
 				SI.Location AS InterviewLocation,
 				SI.InterviewMode,
 				TO_CHAR(SI.DateTime, 'YYYY-MM-DD\"T\"HH24:MI') AS FormattedDateTime,
@@ -351,6 +358,20 @@ if (isset($_SESSION['username'])) {
 		$rowData = json_decode(htmlspecialchars_decode($row), true);
 		$contactNum = $rowData["CONTACTNUM"] ?? '';
 
+		$username=$_SESSION["username"];
+		$currentJobPostId = $rowData["JOBPOSTID"];
+
+
+		$result = executePlainSQL("SELECT JobPostId
+									FROM JobPosts, Recruiters
+									WHERE JobPosts.RecruiterId = Recruiters.UserName
+										AND Recruiters.UserName = '$username'");
+		$jobPostIds = [];
+		
+		while ($row = oci_fetch_array($result, OCI_ASSOC)) {
+			array_push($jobPostIds, $row["JOBPOSTID"]);
+		}
+
 
 		echo "Editing interview for id: {$rowData["INTERVIEWID"]}<br>";
 
@@ -358,6 +379,16 @@ if (isset($_SESSION['username'])) {
 
         echo "<form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>";
         echo "<input type='hidden' name='saveEditInterviewRequest' value='{$rowData["INTERVIEWID"]}'>";
+		echo "<input type='hidden' name='applicationId' value='{$rowData["APPLICATIONID"]}'>";
+
+		echo "<label for='jobPostDropdown'>Job Post Id*:</label>";
+		echo "<select id='jobPostDropdown' name='interviewJobPostId'>";
+
+				foreach ($jobPostIds as $jobPostId) {
+					$selected = ($jobPostId == $currentJobPostId) ? "selected" : "";
+					echo "<option value='$jobPostId' $selected>$jobPostId</option>";
+				}
+		echo "</select> <br>";
 
         echo "<label for='interviewLocation'>Location*:</label>
               <input type='text' name='interviewLocation' value='{$rowData['INTERVIEWLOCATION']}' required><br>";
@@ -403,32 +434,61 @@ if (isset($_SESSION['username'])) {
 		global $db_conn, $success;
 		//Getting the values from user and insert data into the table
 		$tuple = array(
-			":bind1" => htmlspecialchars($_POST['interviewLocation']),
-			":bind2" => htmlspecialchars($_POST['interviewMode']),
-			":bind3" => $_POST['interviewDatetime'],
-			":bind4" => htmlspecialchars($_POST['interviewTimezone'])
+			":bind1" => $_POST['interviewJobPostId'],
+			":bind2" => htmlspecialchars($_POST['interviewLocation']),
+			":bind3" => htmlspecialchars($_POST['interviewMode']),
+			":bind4" => $_POST['interviewDatetime'],
+			":bind5" => htmlspecialchars($_POST['interviewTimezone'])
 		);
 
 		$alltuples = array(
 			$tuple
 		);
 
+		$tuple2 = array(
+			":bind1" => $_POST['interviewJobPostId']
+		);
+
+		$alltuples2 = array(
+			$tuple2
+		);
+
+		$applicationId = $_POST["applicationId"];
+
+
 		executeBoundSQL("
 		UPDATE ScheduledInterviews
-		SET Location = :bind1,
-			InterviewMode =  :bind2,
-			DateTime = TO_DATE(:bind3, 'YYYY-MM-DD\"T\"HH24:MI'),
-			TimeZone = :bind4
+		SET JobPostId = :bind1,
+			Location = :bind2,
+			InterviewMode =  :bind3,
+			DateTime = TO_DATE(:bind4, 'YYYY-MM-DD\"T\"HH24:MI'),
+			TimeZone = :bind5
 		WHERE InterviewId ='{$interviewId}'
 	", $alltuples);
+	oci_commit($db_conn);
+	if ($success){
+		executeBoundSQL("
+		UPDATE APPLICATIONS
+		SET JobPostId = :bind1
+		WHERE ApplicationId ='{$applicationId}'
+	", $alltuples2);
+		
+		
+	} else{
+		
+		echo "<p style='color: red;'>Fail to edit the interview</p>";
+		return;
+	}
 
-			oci_commit($db_conn);
-		if ($success){
-			echo "<p style='color: green;'>Interview was edited successfully</p>";
-		} else{
-			echo "<p style='color: red;'>Fail to edit the interview</p>";
-		}
+	if ($success){
+		echo "<p style='color: green;'>Interview was edited successfully</p>";
+	} else{
+		echo "<p style='color: red;'>Fail to edit the interview</p>";
+	}
+		
 
+			
+		
 
 
 	}
@@ -515,9 +575,6 @@ if (isset($_SESSION['username'])) {
 					}
 				});
 				</script>";
-	}
-	function generateInterviewerFields(){
-
 	}
 
 	function handleSaveNewInterviewRequest($arr) {
@@ -962,7 +1019,7 @@ if (isset($_SESSION['username'])) {
 	// HANDLE ALL POST ROUTES
 	// A better coding practice is to have one method that reroutes your requests accordingly. It will make it easier to add/remove functionality.
 	function handlePOSTRequest()
-	{	var_dump($_POST);
+	{
 		if (connectToDB()) {
 			if (array_key_exists('saveNewInterviewRequest', $_POST) && array_key_exists('saveNewInterview', $_POST)) {
 				handleSaveNewInterviewRequest($_POST['saveNewInterview']);
