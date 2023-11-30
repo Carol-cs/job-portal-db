@@ -113,7 +113,7 @@
                     FOREIGN KEY (UserName) REFERENCES Users ON DELETE CASCADE
                 )",
             
-                "CREATE SEQUENCE JobPostId_Sequence START WITH 6 INCREMENT BY 1",
+                "CREATE SEQUENCE JobPostId_Sequence START WITH 10 INCREMENT BY 1",
                 
                 "CREATE TABLE JobPosts (
                     JobPostId INTEGER PRIMARY KEY,
@@ -136,7 +136,7 @@
                     FOREIGN KEY (JobSeekerId) REFERENCES JobSeekers(UserName)
                 )",
             
-                "CREATE SEQUENCE ApplicationId_Sequence START WITH 6 INCREMENT BY 1",
+                "CREATE SEQUENCE ApplicationId_Sequence START WITH 16 INCREMENT BY 1",
                 
                 "CREATE TABLE Applications (
                     ApplicationId INTEGER PRIMARY KEY,

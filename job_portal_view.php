@@ -94,7 +94,7 @@ $show_debug_alert_messages = False; // show which methods are being triggered (s
                             }
                         }
                     ?>
-                    }
+                
                     </select>
                     <br><br>
                     <input type="submit" value="Submit">
@@ -232,12 +232,15 @@ function handleSelectRequest() {
     echo "</tr>";
 
     $rowsFetched = false;
+    
 
     while ($row = oci_fetch_array($result, OCI_ASSOC)) {
+        
         $rowsFetched = true;
         echo "<tr>";
-        foreach ($row as $column) {
-            echo "<td>$column</td>";
+        foreach ($_GET['attributes'] as $attribute){
+            $cellValue = $row["$attribute"] ?? 'N/A';
+            echo "<td>$cellValue</td>";
         }
         echo "</tr>";
     }

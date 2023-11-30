@@ -454,6 +454,14 @@ if (isset($_SESSION['username'])) {
 		);
 
 		$applicationId = $_POST["applicationId"];
+		$result = executePlainSQL(
+			"SELECT jobPostId
+			 FROM APPLICATIONS
+			 WHERE ApplicationId ='{$applicationId}'");
+
+		$row = OCI_Fetch_Array($result, OCI_ASSOC);
+
+		$currentJobPostId = $row["JOBPOSTID"];
 
 
 		executeBoundSQL("
@@ -472,8 +480,17 @@ if (isset($_SESSION['username'])) {
 		SET JobPostId = :bind1
 		WHERE ApplicationId ='{$applicationId}'
 	", $alltuples2);
-		
-		
+		oci_commit($db_conn);
+		executePlainSQL(
+	   "UPDATE JOBPOSTS
+		SET JobPosts.NumOfApplications = JobPosts.NumOfApplications + 1
+		WHERE JobPostId ='{$_POST['interviewJobPostId']}'");
+		oci_commit($db_conn);
+		executePlainSQL(
+			"UPDATE JOBPOSTS
+			 SET JobPosts.NumOfApplications = JobPosts.NumOfApplications - 1
+			 WHERE JobPostId ='$currentJobPostId'");
+		oci_commit($db_conn);
 	} else{
 		
 		echo "<p style='color: red;'>Fail to edit the interview</p>";
