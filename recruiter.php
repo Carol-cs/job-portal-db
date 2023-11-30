@@ -848,7 +848,7 @@ if (isset($_SESSION['username'])) {
 		?>
 
 <hr>
-	<h2>Find jobseekers who have applied for all jobs (DIVISION)</h2>
+	<h2>Find Jobseekers Who Have Applied for All Jobs Posted by the Recruiter (Division)</h2>
 		<form method="GET" action="recruiter.php">
 		<input type="hidden" id="divisionQueryRequest" name="divisionQueryRequest">
 		<input type="submit" name="divisionQuery"></p>

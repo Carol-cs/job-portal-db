@@ -53,7 +53,9 @@
             $password8 = password_hash("avapassword456", PASSWORD_DEFAULT);
             $password9 = password_hash("robertpassword789", PASSWORD_DEFAULT);
             $password10 = password_hash("sophiapassword123", PASSWORD_DEFAULT);
-            
+            // $sqlContent = file_get_contents('initialize.sql');
+            // $sqlQueries = explode(';', $sqlContent);
+            // var_dump($sqlQueries);
             $sqlQueries = [
                 "DROP TABLE JOBSEEKERS_CAREERFAIRS",
                 "DROP TABLE COMPANIES_CAREERFAIRS",
@@ -287,26 +289,43 @@
                 "INSERT INTO JobSeekers
                 VALUES ('sophia_taylor')",
             
+                
                 "INSERT INTO JobPosts
                 VALUES (1, 'john_doe', 'Software Engineer', 'Online', 80000, TO_DATE('2023-10-18', 'YYYY-MM-DD'), 'Full-time',
                         'We are looking for a software engineer with strong programming skills.', TO_DATE('2023-11-15', 'YYYY-MM-DD'),
-                        'Bachelor''s degree in Computer Science, Proficiency in Java, 2+ years of experience', 50)",
+                        'Bachelor''s degree in Computer Science, Proficiency in Java, 2+ years of experience', 4)",
                 "INSERT INTO JobPosts
                 VALUES (2, 'jane_smith', 'Marketing Manager', '456 Elm Avenue, Toronto', 70000, TO_DATE('2023-10-19', 'YYYY-MM-DD'), 'Full-time',
                         'We need an experienced marketing manager to lead our marketing team.', TO_DATE('2023-11-20', 'YYYY-MM-DD'),
-                        'Bachelor''s degree in Marketing, 5+ years of marketing experience', 20)",
+                        'Bachelor''s degree in Marketing, 5+ years of marketing experience', 1)",
                 "INSERT INTO JobPosts
                 VALUES (3, 'michael_johnson', 'Data Analyst', '123 Main Street, Vancouver', 30000, TO_DATE('2023-10-19', 'YYYY-MM-DD'), 'Internship',
                         'We are hiring a data analyst intern for a short-term project.', TO_DATE('2023-11-10', 'YYYY-MM-DD'),
-                        'Strong data analysis skills, familiarity with Python and database', 30)",
-                "INSERT INTO JobPosts
-                VALUES (4, 'emily_brown', 'Graphic Designer', 'Online', 55000, TO_DATE('2023-10-21', 'YYYY-MM-DD'), 'Full-time',
+                        'Strong data analysis skills, familiarity with Python and database', 1)",
+               "INSERT INTO JobPosts
+                VALUES (4, 'emily_brown', 'Graphic Designer', 'Online', 66000, TO_DATE('2023-10-21', 'YYYY-MM-DD'), 'Full-time',
                         'Looking for a creative graphic designer to work on various design projects.',
-                        TO_DATE('2023-11-25', 'YYYY-MM-DD'), 'Graphic design experience, proficiency in Adobe Creative Suite', 12)",
+                        TO_DATE('2023-11-25', 'YYYY-MM-DD'), 'Graphic design experience, proficiency in Adobe Creative Suite', 1)",
                 "INSERT INTO JobPosts
-                VALUES (5, 'william_davis', 'Customer Support Representative', '101 Pine Road, Calgary', 45000, TO_DATE('2023-10-22', 'YYYY-MM-DD'),
-                        'Full-time', 'We are seeking a customer support representative to assist our customers.',
-                        TO_DATE('2023-11-30', 'YYYY-MM-DD'), 'Excellent communication skills, customer service experience', 15)",
+                VALUES (5, 'william_davis', 'Product Manager', '101 Pine Road, Calgary', 45000, TO_DATE('2023-10-22', 'YYYY-MM-DD'),
+                        'Full-time', 'We are seeking a product manager to assist our production.',
+                        TO_DATE('2023-11-30', 'YYYY-MM-DD'), 'Excellent communication skills, product management experience', 0)",
+                "INSERT INTO JobPosts
+                VALUES (6, 'john_doe', 'Product Manager', 'Online', 90000, TO_DATE('2023-11-05', 'YYYY-MM-DD'), 'Full-time',
+                        'Looking for an experienced product manager to lead product development.', TO_DATE('2023-12-05', 'YYYY-MM-DD'),
+                        '5+ years of product management experience, strong leadership skills', 3)",
+                "INSERT INTO JobPosts
+                VALUES (7, 'john_doe', 'Data Analyst', 'Online', 85000, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'Full-time',
+                        'We are hiring a data analyst with expertise in machine learning.', TO_DATE('2023-12-10', 'YYYY-MM-DD'),
+                        'Ph.D. in Computer Science, experience with machine learning algorithms', 4)",
+                "INSERT INTO JobPosts
+                VALUES (8, 'william_davis', 'Data Analyst', '101 Pine Road, Calgary', 55000, TO_DATE('2023-10-22', 'YYYY-MM-DD'),
+                        'Full-time', 'We are seeking a data analyst with Python and R skills.',
+                        TO_DATE('2023-11-30', 'YYYY-MM-DD'), 'Excellent coding skills', 0)",
+                "INSERT INTO JobPosts
+                VALUES (9, 'jane_smith', 'Product Manager', '456 Elm Avenue, Toronto', 60000, TO_DATE('2023-10-19', 'YYYY-MM-DD'), 'Full-time',
+                        'We need an experienced product manager to lead our development team.', TO_DATE('2023-11-20', 'YYYY-MM-DD'),
+                        'Bachelor''s degree in Business/STEM, 3+ years of management experience', 0)",
                 
                 
                 "INSERT INTO Resumes
@@ -335,6 +354,36 @@
                 "INSERT INTO Applications
                 VALUES (5, NULL, NULL, TO_DATE('2023-10-10', 'YYYY-MM-DD'), 'http://example.com/coverletter1-sophia_taylor',
                         'http://example.com/resume1-sophia_taylor', 'Incomplete application', NULL)",
+                "INSERT INTO Applications
+                VALUES (6, 'john_doe', 6, TO_DATE('2023-11-02', 'YYYY-MM-DD'), 'http://example.com/coverletter2-olivia_wilson', 'http://example.com/resume1-olivia_wilson',
+                        'Under Review', TO_DATE('2023-11-03', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (7, 'john_doe', 7, TO_DATE('2023-11-06', 'YYYY-MM-DD'), 'http://example.com/coverletter3-olivia_wilson', 'http://example.com/resume1-olivia_wilson',
+                        'Under Review', TO_DATE('2023-11-07', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (8, 'john_doe', 6, TO_DATE('2023-11-15', 'YYYY-MM-DD'), 'http://example.com/coverletter1-james_miller', 'http://example.com/resume1-james_miller',
+                        'Under Review', TO_DATE('2023-11-16', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (9, 'john_doe', 7, TO_DATE('2023-11-18', 'YYYY-MM-DD'), 'http://example.com/resume2-james_miller', 'http://example.com/resume1-james_miller',
+                        'Under Review', TO_DATE('2023-11-19', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (10, 'john_doe', 6, TO_DATE('2023-11-11', 'YYYY-MM-DD'), 'http://example.com/coverletter2-ava_jones', 'http://example.com/resume1-ava_jones',
+                        'Under Review', TO_DATE('2023-11-12', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (11, 'john_doe', 7, TO_DATE('2023-11-11', 'YYYY-MM-DD'), 'http://example.com/coverletter3-ava_jones', 'http://example.com/resume1-ava_jones',
+                        'Under Review', TO_DATE('2023-11-12', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (12, 'john_doe', 7, TO_DATE('2023-11-20', 'YYYY-MM-DD'), NULL, 'http://example.com/resume1-robert_lee',
+                        'Under Review', TO_DATE('2023-11-21', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (13, 'john_doe', 1, TO_DATE('2023-11-06', 'YYYY-MM-DD'), 'http://example.com/coverletter4-ava_jones', 'http://example.com/resume1-ava_jones',
+                        'Under Review', TO_DATE('2023-11-07', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (14, 'john_doe', 1, TO_DATE('2023-11-15', 'YYYY-MM-DD'), 'http://example.com/coverletter1-james_miller', 'http://example.com/resume1-james_miller',
+                        'Under Review', TO_DATE('2023-11-16', 'YYYY-MM-DD'))",
+                "INSERT INTO Applications
+                VALUES (15, 'john_doe', 1, TO_DATE('2023-11-15', 'YYYY-MM-DD'), NULL, 'http://example.com/resume1-robert_lee',
+                        'Under Review', TO_DATE('2023-11-16', 'YYYY-MM-DD'))",
                 
                 "INSERT INTO ScheduledInterviews
                 VALUES (1, 1, '123 Main St, City1', 'In-Person', TO_DATE('2023-10-28T10:00', 'YYYY-MM-DD\"T\"HH24:MI'), 'PST')",
