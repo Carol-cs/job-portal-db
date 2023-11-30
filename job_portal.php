@@ -42,6 +42,17 @@
         function handleResetRequest() {
             global $db_conn;
             global $success;
+
+            $password1 = password_hash("johnpassword123", PASSWORD_DEFAULT);
+            $password2 = password_hash("janepassword456!", PASSWORD_DEFAULT);
+            $password3 = password_hash("michaelpassword789", PASSWORD_DEFAULT);
+            $password4 = password_hash("emilypassword123", PASSWORD_DEFAULT);
+            $password5 = password_hash("williampassword456", PASSWORD_DEFAULT);
+            $password6 = password_hash("oliviapassword789", PASSWORD_DEFAULT);
+            $password7 = password_hash("jamespassword123", PASSWORD_DEFAULT);
+            $password8 = password_hash("avapassword456", PASSWORD_DEFAULT);
+            $password9 = password_hash("robertpassword789", PASSWORD_DEFAULT);
+            $password10 = password_hash("sophiapassword123", PASSWORD_DEFAULT);
             
             $sqlQueries = [
                 "DROP TABLE JOBSEEKERS_CAREERFAIRS",
@@ -201,25 +212,25 @@
                     FOREIGN KEY (EventId) REFERENCES CareerFairs ON DELETE CASCADE
                 )",
                 "INSERT INTO UserLogInfo
-                VALUES ('john_doe', 'johnpassword123')",
+                VALUES ('john_doe', '$password1')",
                 "INSERT INTO UserLogInfo
-                VALUES ('jane_smith', 'janepassword456!')",
+                VALUES ('jane_smith', '$password2')",
                "INSERT INTO UserLogInfo
-                VALUES ('michael_johnson', 'michaelpassword789')",
+                VALUES ('michael_johnson', '$password3')",
                 "INSERT INTO UserLogInfo
-                VALUES ('emily_brown', 'emilypassword123')",
+                VALUES ('emily_brown', '$password4')",
                 "INSERT INTO UserLogInfo
-                VALUES ('william_davis', 'williampassword456')",
+                VALUES ('william_davis', '$password5')",
                 "INSERT INTO UserLogInfo
-                VALUES ('olivia_wilson', 'oliviapassword789')",
+                VALUES ('olivia_wilson', '$password6')",
                 "INSERT INTO UserLogInfo
-                VALUES ('james_miller', 'jamespassword123')",
+                VALUES ('james_miller', '$password7')",
                 "INSERT INTO UserLogInfo
-                VALUES ('ava_jones', 'avapassword456')",
+                VALUES ('ava_jones', '$password8')",
                 "INSERT INTO UserLogInfo
-                VALUES ('robert_lee', 'robertpassword789')",
+                VALUES ('robert_lee', '$password9')",
                 "INSERT INTO UserLogInfo
-                VALUES ('sophia_taylor', 'sophiapassword123')",
+                VALUES ('sophia_taylor', '$password10')",
                 
                 "INSERT INTO Users
                 VALUES ('john_doe', 'John Doe', 'john.doe@email.com', '123-456-7890', 'Description of John')",
@@ -438,7 +449,7 @@
             Username* <input type="text" name="username" required="required"> <br><br>
             Password* <input type="password" name="password" required="required"> <br><br>
 
-            <label for="userTypeSelect">User Type:</label>
+            <label for="userTypeSelect">User Type* </label>
             <select name="userType" id="userTypeSelect" required="required">
                 <option disabled selected value> -- select an option -- </option>
                 <option value="recruiter" name="recruiter">Recruiter</option>
@@ -452,7 +463,7 @@
             Description <input type="text" name="description"> <br><br>
 
             <div id="companyInfo" style="display: none;">
-                <label for="companyOption">Company:</label>
+                <label for="companyOption">Company* </label>
                 <select name="companyOption" id="companyOption">
                     <option disabled selected value> -- select an option -- </option>
                     <option value="existing" name="existing">Use Existing Company ID</option>
@@ -734,7 +745,7 @@
 
             // Your username is ora_(CWL_ID) and the password is a(student number). For example,
 			// ora_platypus is the username and a12345678 is the password.
-            $db_conn = OCILogon("ora_carolm03", "a17849571", "dbhost.students.cs.ubc.ca:1522/stu");
+            $db_conn = OCILogon("ora_xli2801", "a80002512", "dbhost.students.cs.ubc.ca:1522/stu");
 
             if ($db_conn) {
                 debugAlertMessage("Database is Connected");

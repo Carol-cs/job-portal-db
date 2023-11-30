@@ -28,8 +28,8 @@ error_reporting(E_ALL);
 // Set some parameters
 
 // Database access configuration
-$config["dbuser"] = "ora_carolm03";			// change "cwl" to your own CWL
-$config["dbpassword"] = "a17849571";	// change to 'a' + your student number
+$config["dbuser"] = "ora_xli2801";			// change "cwl" to your own CWL
+$config["dbpassword"] = "a80002512";	// change to 'a' + your student number
 $config["dbserver"] = "dbhost.students.cs.ubc.ca:1522/stu";
 $db_conn = NULL;	// login credentials are used in connectToDB()
 
@@ -37,90 +37,73 @@ $success = true;	// keep track of errors so page redirects only if there are no 
 
 $show_debug_alert_messages = False; // show which methods are being triggered (see debugAlertMessage())
 
-// The next tag tells the web server to stop parsing the text as PHP. Use the
-// pair of tags wherever the content switches to PHP
-?>
-
-<html>
-<head>
-    <title>Job Portal</title>
-</head>
-<h2>Display Selected Attributes from Selected Table</h2>
-<?php
-if (isset($_GET['table'])) {
-    global $db_conn;
-    connectToDB();
-    $selectedTable = $_GET['table'];
-
-    $result = executePlainSQL("SELECT column_name FROM all_tab_columns WHERE table_name = '$selectedTable'");
-    oci_commit($db_conn);
-
-    $allAttributes = array();
-    while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
-        array_push($allAttributes, $row['COLUMN_NAME']);
-    }
-
-    if (count($allAttributes) == 0){
-        echo "<p>Selected table does not exist or has no attributes.</p>";
-    } else{
-        echo "<form method='get' action='job_portal_view.php'>";
-        echo "<input type='hidden' name='selectedTable' value='$selectedTable'>";
-        echo "<label for='attributes[]'>Choose attribute(s) for $selectedTable:</label><br>";
-        foreach ($allAttributes as $attribute) {
-            echo "<input type='checkbox' id='$attribute' name='attributes[]' value='$attribute'>";
-            echo "<label for='$attribute'>$attribute</label><br>";
-        }
-        echo "<br><input type='submit' value='Submit' name='searchSubmit'>";
-        echo "</form>";
-
-        echo "<form method='get' action='job_portal_view.php'>";
-        echo "<input type='submit' value='Go back to select table'>";
-        echo "</form>";
-
-    }
-
-} else { // if no table selected, display drop down
     ?>
-    <form method="get" action="job_portal_view.php">
-        <label for="table">Choose a table:</label>
-        <select id="table" name="table">
-            <?php
-            $tables = getAllTables();
-            foreach ($tables as $table) {
-                echo "<option value='$table'>$table</option>";
+  <html>
+    <head>
+        <title>Job Portal</title>
+    </head>
+        <h2>Display Selected Attributes from Selected Table</h2>
+        <?php
+            if (connectToDB()) {
+                global $db_conn;
+                $tables = executePlainSQL("SELECT table_name FROM all_tables WHERE owner = 'ORA_XLI2801'");
+
+                disconnectFromDB();
+            }
+            
+            if (isset($_GET['table'])) {
+                $selectedTable = $_GET['table'];
+
+                if (connectToDB()) {
+                    $attributesResult = executePlainSQL("SELECT column_name FROM all_tab_columns WHERE table_name = '$selectedTable' AND owner = 'ORA_XLI2801'");
+                    $tableAttributes = [];
+            
+                    while ($row = oci_fetch_array($attributesResult, OCI_ASSOC)) {
+                        $tableAttributes[] = $row['COLUMN_NAME'];
+                    }
+            
+                    disconnectFromDB();
+            
+                    if (count($tableAttributes) > 0) {
+                        echo "<form method='get' action='job_portal_view.php'>";
+                        echo "<input type='hidden' name='selectedTable' value='$selectedTable'>";
+                        echo "<label for='attributes[]'>Choose attribute(s) for $selectedTable:</label><br>";
+                        foreach ($tableAttributes as $attribute) {
+                            echo "<input type='checkbox' id='$attribute' name='attributes[]' value='$attribute'>";
+                            echo "<label for='$attribute'>$attribute</label><br>";
+                        }
+                        echo "<br><input type='submit' value='Submit' name='searchSubmit'>";
+                        echo "</form>";
+            
+                        echo "<form method='get' action='job_portal_view.php'>";
+                        echo "<input type='submit' value='Go back to select table'>";
+                        echo "</form>";
+                    } else {
+                        echo "<p>Selected table does not exist or has no attributes.</p>";
+                    }
+                }
+            } else { // if no table selected, display drop down
+                ?>
+                <form method="get" action="job_portal_view.php">
+                    <label for="table">Choose a table:</label>
+                    <select id="table" name="table">
+                    <?php
+                        while ($row = oci_fetch_array($tables, OCI_ASSOC)) {
+                            foreach ($row as $column) {
+                                echo "<option value=\"$column\">$column</option>";
+                            }
+                        }
+                    ?>
+                    }
+                    </select>
+                    <br><br>
+                    <input type="submit" value="Submit">
+                </form>
+                <?php
             }
             ?>
-        </select>
-        <br><br>
-        <input type="submit" value="Submit">
-    </form>
-    <?php
-}
-?>
-<a href="job_portal.php"><button>Go Back to Main Page</button></a>
-<br><br>
-<?php
-function getAllTables() {
-    global $db_conn;
-
-    if (connectToDB()){
-        $result = executePlainSQL("SELECT table_name FROM user_tables");
-        oci_commit($db_conn);
-
-        $tableNames = array();
-        while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
-            array_push($tableNames, $row['TABLE_NAME']);
-        }
-
-        return $tableNames;
-
-    } else{
-        echo "Cannot connect to the database";
-    }
-
-
-}
-?>
+            <a href="job_portal.php"><button>Go Back to Main Page</button></a>
+            <br><br>
 
 
 <?php
