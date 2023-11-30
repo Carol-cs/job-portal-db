@@ -58,7 +58,7 @@ CREATE TABLE JobSeekers (
 
 
 CREATE SEQUENCE JobPostId_Sequence
-START WITH 6
+START WITH 10
 INCREMENT BY 1;
 
 CREATE TABLE JobPosts (
@@ -84,7 +84,7 @@ CREATE TABLE Resumes (
 );
 
 CREATE SEQUENCE ApplicationId_Sequence
-START WITH 6
+START WITH 16
 INCREMENT BY 1;
 
 CREATE TABLE Applications (
@@ -279,7 +279,7 @@ INSERT INTO JobPosts
 VALUES (8, 'william_davis', 'Data Analyst', '101 Pine Road, Calgary', 55000, TO_DATE('2023-10-22', 'YYYY-MM-DD'),
 'Full-time', 'We are seeking a data analyst with Python and R skills.',
 TO_DATE('2023-11-30', 'YYYY-MM-DD'), 'Excellent coding skills', 0);
-INSERT INTO JobPost
+INSERT INTO JobPosts
 VALUES (9, 'jane_smith', 'Product Manager', '456 Elm Avenue, Toronto', 60000, TO_DATE('2023-10-19', 'YYYY-MM-DD'), 'Full-time',
         'We need an experienced product manager to lead our development team.', TO_DATE('2023-11-20', 'YYYY-MM-DD'),
          'Bachelor''s degree in Business/STEM, 3+ years of management experience', 0);
