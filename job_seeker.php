@@ -258,7 +258,7 @@ if (isset($_SESSION['username'])) {
 			<input type="hidden" id="createDraftApplicationsRequest" name="createDraftApplicationsRequest">
 			<label for='coverLetter'>Cover Letter (Link):</label>
 			<input type='text' name='coverLetter' placeholder='Enter link'><br>
-			<label for='resume'>Resume (Link):</label>
+			<label for='resume'>Resume (Link)*:</label>
 			<input type='text' name='resume' placeholder='Enter link' required><br>
 			<input type="submit" value="Create Applications" name="createDraftApplications"></p>
 		</form>
@@ -278,34 +278,51 @@ if (isset($_SESSION['username'])) {
 				echo "<p style='color: red;'>Invalid Resume URL, please try again!</p>";
 				return;
 			}
-			if (filter_var($coverLetter, FILTER_VALIDATE_URL) === FALSE) {
+			if (!empty($coverLetter) && filter_var($coverLetter, FILTER_VALIDATE_URL) === FALSE) {
 				echo "<p style='color: red;'>Invalid Cover Letter URL, please try again!</p>";
 				return;
 			}
-			
-			
-			executePlainSQL(
-					"INSERT INTO Resumes
-					VALUES ('$resume', '$jobSeekerUserName')");
 
+
+			$result = executePlainSQL("SELECT Count(*) AS RESULT
+											FROM Resumes
+											WHERE Resumes.Resume = '$resume'
+											AND Resumes.JobSeekerId = '$jobSeekerUserName'");
 				
-			if ($success) {
-				executePlainSQL(
-					"INSERT INTO Applications
-					VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
-				if (!$success){
-					executePlainSQL("DELETE FROM Resumes WHERE Resume='$resume'");
+				$row = OCI_Fetch_Array($result, OCI_ASSOC);
+				if ($row["RESULT"] == 0){ // this job seeker don't have that resume
+					executePlainSQL(
+						"INSERT INTO Resumes
+						VALUES ('$resume', '$jobSeekerUserName')");
+						oci_commit($db_conn);
+	
+						if ($success) {
+							executePlainSQL(
+								"INSERT INTO Applications
+								VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
+							if (!$success){
+								executePlainSQL("DELETE FROM Resumes WHERE Resume='$resume'");
+						}else{
+							echo "<p style='color: red;'>Fail to submit Application due to Resume URL</p>";
+							return;
+						}
+				} else{
+					executePlainSQL(
+						"INSERT INTO Applications
+						VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
+					oci_commit($db_conn);
 				}
 				
-			} 
+			}
 
 			if ($success){
-				echo "<p style='color: green;'>Application was created successfully</p>";
+				echo "<p style='color: green;'>Application was submitted successfully</p>";
 			} else{
-				echo "<p style='color: red;'>Fail to create Application</p>";
+				echo "<p style='color: red;'>Fail to submit Application</p>";
 			}
-			oci_commit($db_conn);
-
+			
+			
+			
 		}
 	
 		// all routes checker for jobseekers creating draft applications
@@ -520,7 +537,7 @@ if (isset($_SESSION['username'])) {
 				<label for='coverLetter'>Cover Letter (Link):</label>
 				<input type='text' name='coverLetter' placeholder='Enter link'><br>
 				
-				<label for='resume'>Resume (Link):</label>
+				<label for='resume'>Resume (Link)*:</label>
 				<input type='text' name='resume' placeholder='Enter link' required><br>
 		
 				<button type='submit' name='submitApplication' value='{$row["JOBPOSTID"]}'>Submit</button>
@@ -587,17 +604,52 @@ if (isset($_SESSION['username'])) {
 				echo "<p style='color: red;'>Invalid Resume URL, please try again!</p>";
 				return;
 			}
-			if (filter_var($coverLetter, FILTER_VALIDATE_URL) === FALSE) {
+			if (!empty($coverLetter) && filter_var($coverLetter, FILTER_VALIDATE_URL) === FALSE) {
 				echo "<p style='color: red;'>Invalid Cover Letter URL, please try again!</p>";
 				return;
 			}
 			while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
-				executePlainSQL(
-					"INSERT INTO Resumes
-					VALUES ('$resume', '$jobSeekerUserName')");
-					oci_commit($db_conn);
 
-				if ($success){
+				$result = executePlainSQL("SELECT Count(*) AS RESULT
+											FROM Resumes
+											WHERE Resumes.Resume = '$resume'
+											AND Resumes.JobSeekerId = '$jobSeekerUserName'");
+				
+				$countResult = OCI_Fetch_Array($result, OCI_ASSOC);
+				if ($countResult["RESULT"] == 0){ // this job seeker don't have that resume
+					executePlainSQL(
+						"INSERT INTO Resumes
+						VALUES ('$resume', '$jobSeekerUserName')");
+						oci_commit($db_conn);
+	
+					if ($success){
+						executePlainSQL(
+							"INSERT INTO Applications
+							VALUES (ApplicationId_Sequence.nextval, '{$row['RECRUITERID']}', $jobPostId, TO_DATE('$currentDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Under Review', TO_DATE('$currentDate','YYYY-MM-DD'))");
+							oci_commit($db_conn);
+							if ($success){
+								executePlainSQL(
+									"UPDATE JobPosts 
+									SET JobPosts.NumOfApplications = JobPosts.NumOfApplications+1
+									WHERE JobPosts.JobPostId = $jobPostId
+									");
+									oci_commit($db_conn);
+							} else{
+								executePlainSQL(
+									"DELETE FROM Applications WHERE ApplicationId=ApplicationId_Sequence.currval"
+								);
+								executePlainSQL(
+									"DELETE FROM Resumes WHERE Resume='$resume'"
+								);
+								oci_commit($db_conn);
+							}
+	
+					}else{
+						echo "<p style='color: red;'>Fail to submit Application due to Resume URL</p>";
+						return;
+						
+					}
+				} else{
 					executePlainSQL(
 						"INSERT INTO Applications
 						VALUES (ApplicationId_Sequence.nextval, '{$row['RECRUITERID']}', $jobPostId, TO_DATE('$currentDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Under Review', TO_DATE('$currentDate','YYYY-MM-DD'))");
@@ -613,21 +665,12 @@ if (isset($_SESSION['username'])) {
 							executePlainSQL(
 								"DELETE FROM Applications WHERE ApplicationId=ApplicationId_Sequence.currval"
 							);
-							executePlainSQL(
-								"DELETE FROM Resumes WHERE Resume='$resume'"
-							);
 							oci_commit($db_conn);
 						}
-
-				}else{
-					executePlainSQL(
-						"DELETE FROM Resumes WHERE Resume='$resume'"
-					);
-					oci_commit($db_conn);
 				}
+				
 			}
 
-			oci_commit($db_conn);
 			if ($success){
 				echo "<p style='color: green;'>Application was submitted successfully</p>";
 			} else{
