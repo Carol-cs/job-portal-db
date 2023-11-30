@@ -860,13 +860,15 @@ if (isset($_SESSION['username'])) {
 
 		function handleDivisionQueryRequest(){
 			global $db_conn;
+			$username = $_SESSION["username"];
 
 			$result = executePlainSQL(
 				"SELECT JS.UserName AS JobSeekerUserName
 				FROM JobSeekers JS
 				WHERE NOT EXISTS
 					(( SELECT JP.JobPostId
-						FROM JobPosts JP)
+						FROM JobPosts JP
+						WHERE JP.recruiterId = '$username')
 						MINUS
 					   (SELECT A.JobPostId
 							FROM Applications A, Resumes R
