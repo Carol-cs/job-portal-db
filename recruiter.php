@@ -707,25 +707,25 @@ if (isset($_SESSION['username'])) {
 	<h2>Recruiter Create Job Posts</h2>
 		<form method="POST" action="recruiter.php">
 		<label for="jobTitle">Job Title*:</label>
-		<input type="text" name="jobTitle" required><br>
+		<input type="text" name="jobTitle" required><br><br>
 
 		<label for="jobLocation">Job Location:</label>
-		<input type="text" name="jobLocation"><br>
+		<input type="text" name="jobLocation"><br><br>
 
 		<label for="jobType">Job Type*:</label>
-		<input type="text" name="jobType" required><br>
+		<input type="text" name="jobType" required><br><br>
 
 		<label for="salary">Salary:</label>
-		<input type="text" name="salary"><br>
+		<input type="text" name="salary"><br><br>
 
 		<label for="description">Description*:</label>
-		<textarea name="description" rows="4" required></textarea><br>
+		<textarea name="description" rows="4" required></textarea><br><br>
 
 		<label for="requirements">Requirements:</label>
-		<textarea name="requirements" rows="4"></textarea><br>
+		<textarea name="requirements" rows="4"></textarea><br><br>
 
 		<label for="deadline">Deadline*:</label>
-		<input type="date" name="deadline" required><br>
+		<input type="date" name="deadline" required><br><br>
 		<input type="hidden" id="createJobPostsRequest" name="createJobPostsRequest">
 		<input type="submit" value="Create Job Posts" name="createJobPosts"></p>
 		</form>
