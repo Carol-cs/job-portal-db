@@ -257,9 +257,9 @@ if (isset($_SESSION['username'])) {
 		<form method="POST" action="job_seeker.php">
 			<input type="hidden" id="createDraftApplicationsRequest" name="createDraftApplicationsRequest">
 			<label for='coverLetter'>Cover Letter (Link):</label>
-			<input type='text' name='coverLetter' placeholder='Enter link'><br>
+			<input type='text' name='coverLetter' placeholder='Enter link'><br><br>
 			<label for='resume'>Resume (Link):</label>
-			<input type='text' name='resume' placeholder='Enter link' required><br>
+			<input type='text' name='resume' placeholder='Enter link' required><br><br>
 			<input type="submit" value="Create Applications" name="createDraftApplications"></p>
 		</form>
 
