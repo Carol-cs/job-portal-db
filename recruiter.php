@@ -190,7 +190,7 @@ if (isset($_SESSION['username'])) {
 		  
 				  $interviewId = $row["INTERVIEWID"];
 		  
-				  // Check if the interview ID has already been processed
+				  // check if the interview ID has already been processed
 				  if (!in_array($interviewId, $processedInterviews)) {
 					  echo "<tr>
 							  <td>{$interviewId}</td>
@@ -201,7 +201,7 @@ if (isset($_SESSION['username'])) {
 							  <td>{$row["INTERVIEWTIMEZONE"]}</td>
 							  <td>";
 		  
-					  // Query to get interviewers for the current interview
+					  // query to get interviewers for the current interview
 					  $interviewersQuery = executePlainSQL("
 						  SELECT
 							  IA.InterviewerId,
@@ -432,7 +432,7 @@ if (isset($_SESSION['username'])) {
 	{	
 
 		global $db_conn, $success;
-		//Getting the values from user and insert data into the table
+
 		$tuple = array(
 			":bind1" => $_POST['interviewJobPostId'],
 			":bind2" => htmlspecialchars($_POST['interviewLocation']),
@@ -502,10 +502,6 @@ if (isset($_SESSION['username'])) {
 	} else{
 		echo "<p style='color: red;'>Fail to edit the interview</p>";
 	}
-		
-
-			
-		
 
 
 	}
@@ -530,8 +526,6 @@ if (isset($_SESSION['username'])) {
 	
 		echo "<label for='interviewTimezone'>Timezone*:</label>
 			  <input type='text' name='interviewTimezone' required><br>";
-	
-		// Add form fields for interviewer details
 
 		// Add dropdown for selecting the number of interviewers
 		echo "<label for='numOfInterviewers'>Number of Interviewers:</label>
@@ -811,7 +805,6 @@ if (isset($_SESSION['username'])) {
 		function handleCreateJobPostsRequest(){
 			global $db_conn, $success;
 
-			// Retrieve values from the form
 			$deadline = $_POST['deadline'];
 
 			// Assign today's date for PostDate
