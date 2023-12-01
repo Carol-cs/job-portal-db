@@ -42,6 +42,19 @@
         function handleResetRequest() {
             global $db_conn;
             global $success;
+
+            // username and password for demo
+            // john_doe             johnpassword123
+            // jane_smith           janepassword456!
+            // michael_johnson      michaelpassword789
+            // emily_brown          emilypassword123
+            // william_davis        williampassword456
+            // olivia_wilson        oliviapassword789
+            // james_miller         jamespassword123
+            // ava_jones            avapassword456
+            // robert_lee           robertpassword789
+            // sohpia_taylor        sophiapassword123
+
             $sqlContent = file_get_contents('initialize.sql'); // import initialize.sql
             $sqlQueries = explode(';', $sqlContent);
             
