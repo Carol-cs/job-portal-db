@@ -294,17 +294,17 @@
             $result = executePlainSQL($query);
         
             echo "<table border='1'><tr>";
-
-            $rowsFetched = false;
-        
-            while ($row = oci_fetch_array($result, OCI_ASSOC)) {
-                $rowsFetched = true;
-                echo "<th>UserName</th>";
+            echo "<th>UserName</th>";
                 echo "<th>Name</th>";
                 echo "<th>Email Address</th>";
                 echo "<th>Phone Number</th>";
                 echo "<th>Description</th>";
                 echo "</tr><tr>";
+
+            $rowsFetched = false;
+        
+            while ($row = oci_fetch_array($result, OCI_ASSOC)) {
+                $rowsFetched = true;
                 foreach ($row as $column) {
                     echo "<td>$column</td>";
                 }

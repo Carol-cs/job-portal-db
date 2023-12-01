@@ -464,8 +464,8 @@ if (isset($_SESSION['username'])) {
 		$currentJobPostId = $row["JOBPOSTID"];
 
 
-		executeBoundSQL("
-		UPDATE ScheduledInterviews
+		executeBoundSQL(
+		"UPDATE ScheduledInterviews
 		SET JobPostId = :bind1,
 			Location = :bind2,
 			InterviewMode =  :bind3,
@@ -475,8 +475,8 @@ if (isset($_SESSION['username'])) {
 	", $alltuples);
 	oci_commit($db_conn);
 	if ($success){
-		executeBoundSQL("
-		UPDATE APPLICATIONS
+		executeBoundSQL(
+		"UPDATE APPLICATIONS
 		SET JobPostId = :bind1
 		WHERE ApplicationId ='{$applicationId}'
 	", $alltuples2);
