@@ -241,17 +241,6 @@ if (isset($_POST['deleteResumes'])) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 <hr>
 <h2>Jobseeker Create New Applications</h2>
 <form method="POST" action="job_seeker.php">
@@ -302,17 +291,18 @@ function handleCreateDraftApplicationsRequest($coverLetter, $resume) {
 								VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
             if (!$success){
                 executePlainSQL("DELETE FROM Resumes WHERE Resume='$resume'");
-            }else{
-                echo "<p style='color: red;'>Fail to submit Application due to Resume URL</p>";
-                return;
+                oci_commit($db_conn);
             }
-        } else{
-            executePlainSQL(
-                "INSERT INTO Applications
-						VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
-            oci_commit($db_conn);
+        }else{
+            echo "<p style='color: red;'>Fail to submit Application due to duplicate Resume URL</p>";
+            return;
         }
 
+    } else{
+        executePlainSQL(
+            "INSERT INTO Applications
+                    VALUES (ApplicationId_Sequence.nextval, NULL, NULL, TO_DATE('$createDate','YYYY-MM-DD'), '$coverLetter', '$resume', 'Incomplete application', NULL)");
+        oci_commit($db_conn);
     }
 
     if ($success){
@@ -636,16 +626,13 @@ function handleSubmitApplicationRequest($jobPostId, $coverLetter, $resume) {
                     oci_commit($db_conn);
                 } else{
                     executePlainSQL(
-                        "DELETE FROM Applications WHERE ApplicationId=ApplicationId_Sequence.currval"
-                    );
-                    executePlainSQL(
                         "DELETE FROM Resumes WHERE Resume='$resume'"
                     );
                     oci_commit($db_conn);
                 }
 
             }else{
-                echo "<p style='color: red;'>Fail to submit Application due to Resume URL</p>";
+                echo "<p style='color: red;'>Fail to submit Application due to duplicate Resume URL</p>";
                 return;
 
             }
@@ -660,11 +647,6 @@ function handleSubmitApplicationRequest($jobPostId, $coverLetter, $resume) {
 								SET JobPosts.NumOfApplications = JobPosts.NumOfApplications+1
 								WHERE JobPosts.JobPostId = $jobPostId
 								");
-                oci_commit($db_conn);
-            } else{
-                executePlainSQL(
-                    "DELETE FROM Applications WHERE ApplicationId=ApplicationId_Sequence.currval"
-                );
                 oci_commit($db_conn);
             }
         }
