@@ -172,25 +172,25 @@ FOREIGN KEY (EventId) REFERENCES CareerFairs ON DELETE CASCADE
 
 
 INSERT INTO UserLogInfo
-VALUES ('john_doe', 'johnpassword123');
+VALUES ('john_doe', '$2y$10$QRo.7YRLY/KNtWmK60hi..pDiD7XdSG.j7NUQctyRTZEc2QGkPcau');
 INSERT INTO UserLogInfo
-VALUES ('jane_smith', 'janepassword456!');
+VALUES ('jane_smith', '$2y$10$2VEuqIx0ypxxuWfUpo5xRuPWYta6Js10I8z44O612B8jJzppiP95u');
 INSERT INTO UserLogInfo
-VALUES ('michael_johnson', 'michaelpassword789');
+VALUES ('michael_johnson', '$2y$10$HPXChvVChoAR4pv23Y3PquFZDkwd4o81KKfq7TZkNSQO1jKgnunvW');
 INSERT INTO UserLogInfo
-VALUES ('emily_brown', 'emilypassword123');
+VALUES ('emily_brown', '$2y$10$fZiia7jm7pWh4UUm9fjkg.EG7gdfn8bg0WzEux7TOisMQ3zgOqmKe');
 INSERT INTO UserLogInfo
-VALUES ('william_davis', 'williampassword456');
+VALUES ('william_davis', '$2y$10$VaJLFKuT0Q/1i2Kuv6dl8.fWslpwr8VOk9JqHrxXoOAl8u3QmJIZa');
 INSERT INTO UserLogInfo
-VALUES ('olivia_wilson', 'oliviapassword789');
+VALUES ('olivia_wilson', '$2y$10$I51Gwyladx5.OTvug4xWpOQn/DPMYAc..sUH29Up12mCyDZpy0Fym');
 INSERT INTO UserLogInfo
-VALUES ('james_miller', 'jamespassword123');
+VALUES ('james_miller', '$2y$10$L7TVIXTraLrTL0312EbUL.z3EhfD/1rk0DW2cnpnIlcFK05eKx652');
 INSERT INTO UserLogInfo
-VALUES ('ava_jones', 'avapassword456');
+VALUES ('ava_jones', '$2y$10$ppzwzQttaVArbybCIR81SOOiv1N.BCEwPp6jGYn1azsAUgzJGeKqS');
 INSERT INTO UserLogInfo
-VALUES ('robert_lee', 'robertpassword789');
+VALUES ('robert_lee', '$2y$10$CZVRiSM3rkNx59QpDmBV5ehDcN1fauo9LuHnO5EYezFwJ1HCszW5W');
 INSERT INTO UserLogInfo
-VALUES ('sophia_taylor', 'sophiapassword123');
+VALUES ('sophia_taylor', '$2y$10$PczdYUPS9.47kWEdTi9nyOIdsDmhYBrsm8R7hE7K9jq68N6C7/bc2');
 
 INSERT INTO Users
 VALUES ('john_doe', 'John Doe', 'john.doe@email.com', '123-456-7890', 'Description of John');
@@ -272,7 +272,7 @@ VALUES (6, 'john_doe', 'Product Manager', 'Online', 90000, TO_DATE('2023-11-05',
         'Looking for an experienced product manager to lead product development.', TO_DATE('2023-12-05', 'YYYY-MM-DD'),
         '5+ years of product management experience, strong leadership skills', 3);
 INSERT INTO JobPosts
-VALUES (7, 'john_doe', 'Data analyst', 'Online', 85000, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'Full-time',
+VALUES (7, 'john_doe', 'Data Analyst', 'Online', 85000, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'Full-time',
         'We are hiring a data analyst with expertise in machine learning.', TO_DATE('2023-12-10', 'YYYY-MM-DD'),
         'Ph.D. in Computer Science, experience with machine learning algorithms', 4);
 INSERT INTO JobPosts
