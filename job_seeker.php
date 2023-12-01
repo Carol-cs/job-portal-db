@@ -676,54 +676,18 @@ if (isset($_POST['applyJobPosts']) || isset($_POST['submitApplication']) || isse
 
 
 <hr>
-<h2>Find the Average Salary for Specified Job Title</h2>
+<h2>Find the Average Salary by Job Title</h2>
 <form method="GET" action="job_seeker.php">
     <input type="hidden" id="findAvgSalaryByTitleRequest" name="findAvgSalaryByTitleRequest">
-    <input type="submit" value="Start to search" name="findAvgSalaryByTitle">
+    <input type="submit" value="Find" name="findAvgSalaryByTitle">
 </form>
 
 <?php
-function handleFindAvgSalaryByTitleRequest() {
+function  handleFindAvgSalaryByTitleRequest(){
     global $db_conn;
-
     $result = executePlainSQL(
-        "SELECT DISTINCT TITLE FROM JOBPOSTS");
-
-    oci_commit($db_conn);
-
-    $jobTitles = [];
-    while ($row = OCI_Fetch_Array($result, OCI_ASSOC)) {
-        array_push($jobTitles, $row["TITLE"]);
-    }
-
-
-    if (count($jobTitles) == 0){
-        echo "<p style='color: blue;'>No job posts found</p>";
-        return;
-    }
-
-
-    echo " <form action='" . $_SERVER['PHP_SELF'] . "' method='POST'>
-					<input type='hidden' name='findAvgSalaryBySpecifiedTitleRequest' id='findAvgSalaryBySpecifiedTitleRequest'>
-					<select name='selectedTitle'>";
-
-    // Populate the dropdown
-    foreach ($jobTitles as $title) {
-        echo "<option value='$title'>$title</option>";
-    }
-
-    echo "</select>
-				<button type='submit' name='findAvgSalaryBySpecifiedTitle'>Find</button>
-				</form>";
-
-
-}
-
-function  handleFindAvgSalaryBySpecifiedTitleRequest($title){
-    global $db_conn;$result = executePlainSQL(
         "SELECT Title, AVG(Salary) AS AvgSalary
 				FROM JobPosts
-				WHERE Title = '$title'
 				GROUP BY TITLE"
     );
 
@@ -752,9 +716,7 @@ function  handleFindAvgSalaryBySpecifiedTitleRequest($title){
 
     oci_commit($db_conn);
 }
-if (isset($_POST['findAvgSalaryBySpecifiedTitle'])){
-    handlePOSTRequest();
-} else if (isset($_GET['findAvgSalaryByTitle'])){
+if (isset($_GET['findAvgSalaryByTitle'])){
     handleGETRequest();
 }
 
@@ -1006,8 +968,6 @@ function handlePOSTRequest()
             handleApplyWithRequest($_POST['applyWith'], $_POST['selectedApplication']);
         } else if (array_key_exists('deleteResumesRequest', $_POST)  && array_key_exists('deleteResumes', $_POST)) {
             handleDeleteResumesRequest($_POST['deleteResumes']);
-        }  else if (array_key_exists('findAvgSalaryBySpecifiedTitleRequest', $_POST)  && array_key_exists('findAvgSalaryBySpecifiedTitle', $_POST)) {
-            handleFindAvgSalaryBySpecifiedTitleRequest($_POST['selectedTitle']);
         }
 
         disconnectFromDB();
